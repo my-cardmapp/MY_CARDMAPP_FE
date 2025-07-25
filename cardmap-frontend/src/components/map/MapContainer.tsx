@@ -3,22 +3,43 @@
 import React, { useEffect, useRef } from 'react'
 import { useNaverMapScript } from '@/hooks/useNaverMapScript'
 import { useMapContext } from '@/contexts/MapContext'
+import { useMarkers } from '@/hooks/useMarkers'
 import { MapSkeleton } from './MapSkeleton'
+import type { Merchant } from '@/types/merchant'
 
 interface MapContainerProps {
   center?: { lat: number; lng: number }
   zoom?: number
   className?: string
+  merchants?: Merchant[]
+  onMarkerClick?: (merchant: Merchant) => void
+  enableClustering?: boolean
+  activeCardTypes?: string[]
 }
 
 const MapContainer: React.FC<MapContainerProps> = ({
   center = { lat: 37.5666805, lng: 126.9784147 }, // Seoul City Hall
   zoom = 15,
   className = '',
+  merchants = [],
+  onMarkerClick,
+  enableClustering = true,
+  activeCardTypes,
 }) => {
   const mapRef = useRef<HTMLDivElement>(null)
   const { isLoading, isError, isLoaded } = useNaverMapScript()
-  const { setMap } = useMapContext()
+  const { map, setMap } = useMapContext()
+  
+  // Use markers hook
+  const {
+    addMerchants,
+    filterByCardType,
+    clearFilter,
+    setOnMarkerClick,
+  } = useMarkers(map, {
+    enableClustering,
+    onMarkerClick,
+  })
 
   useEffect(() => {
     if (!isLoaded || !mapRef.current) return
@@ -37,15 +58,40 @@ const MapContainer: React.FC<MapContainerProps> = ({
       mapDataControl: true,
     }
 
-    const map = new naver.maps.Map(mapRef.current, mapOptions)
-    setMap(map)
+    const newMap = new naver.maps.Map(mapRef.current, mapOptions)
+    setMap(newMap)
 
     // Cleanup
     return () => {
-      map.destroy()
+      newMap.destroy()
       setMap(null)
     }
   }, [isLoaded, center.lat, center.lng, zoom, setMap])
+
+  // Add merchants when they change
+  useEffect(() => {
+    if (!map || merchants.length === 0) return
+    
+    addMerchants(merchants)
+  }, [map, merchants, addMerchants])
+
+  // Handle card type filtering
+  useEffect(() => {
+    if (!map) return
+    
+    if (activeCardTypes && activeCardTypes.length > 0) {
+      filterByCardType(activeCardTypes)
+    } else {
+      clearFilter()
+    }
+  }, [map, activeCardTypes, filterByCardType, clearFilter])
+
+  // Update marker click handler
+  useEffect(() => {
+    if (onMarkerClick) {
+      setOnMarkerClick(onMarkerClick)
+    }
+  }, [onMarkerClick, setOnMarkerClick])
 
   if (isLoading) {
     return <MapSkeleton />
