@@ -1,0 +1,173 @@
+{
+	"meta": {
+		"generatedAt": "2025-07-25T02:35:23.205Z",
+		"tasksAnalyzed": 20,
+		"totalTasks": 20,
+		"analysisCount": 20,
+		"thresholdScore": 5,
+		"projectName": "Taskmaster",
+		"usedResearch": false
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 1,
+			"taskTitle": "Initialize Spring Boot Project Structure",
+			"complexityScore": 4,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down the Spring Boot initialization into subtasks covering project generation, dependency configuration, Virtual Threads setup, package structure creation, and initial testing setup",
+			"reasoning": "Moderate complexity due to Java 21 Virtual Threads configuration and multiple dependency setup, but straightforward Spring Boot initialization process"
+		},
+		{
+			"taskId": 2,
+			"taskTitle": "Configure PostgreSQL with PostGIS Extension",
+			"complexityScore": 6,
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "Create subtasks for PostgreSQL installation, PostGIS extension setup, database creation, HikariCP configuration, Hibernate spatial dialect setup, Flyway migration configuration, and connection testing",
+			"reasoning": "Higher complexity due to spatial database setup, extension configuration, and integration with Spring Boot requiring specific dialect and migration setup"
+		},
+		{
+			"taskId": 3,
+			"taskTitle": "Design and Implement Core Database Schema",
+			"complexityScore": 7,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Divide into subtasks for each table creation (card, merchant, category, merchant_card), spatial index implementation, full-text search setup, trigger creation, and comprehensive testing of constraints and indexes",
+			"reasoning": "Complex task involving spatial data types, JSONB fields, full-text search vectors, triggers, and multiple index types requiring careful design and testing"
+		},
+		{
+			"taskId": 4,
+			"taskTitle": "Set Up Docker Compose Development Environment",
+			"complexityScore": 5,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Create subtasks for docker-compose.yml creation, individual Dockerfile setup for Spring and Next.js, volume configuration, networking setup, environment variable management, and health check implementation",
+			"reasoning": "Moderate complexity with multiple services to containerize, but standard Docker patterns apply with clear service boundaries"
+		},
+		{
+			"taskId": 5,
+			"taskTitle": "Implement Redis Caching Layer",
+			"complexityScore": 5,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Break down into Redis configuration, Spring Cache setup, TTL strategy implementation, serialization configuration, cache warming logic, and performance testing",
+			"reasoning": "Moderate complexity requiring cache strategy design, Spring integration, and serialization setup, but well-documented Spring Cache patterns available"
+		},
+		{
+			"taskId": 6,
+			"taskTitle": "Create JPA Entities and Repositories",
+			"complexityScore": 6,
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "Create subtasks for each entity implementation, spatial type mapping, repository interface creation, custom query implementation, Specification setup, validation configuration, and relationship mapping testing",
+			"reasoning": "Higher complexity due to spatial data type mappings, custom queries for PostGIS operations, and complex entity relationships"
+		},
+		{
+			"taskId": 7,
+			"taskTitle": "Develop Public Data API Integration Service",
+			"complexityScore": 8,
+			"recommendedSubtasks": 10,
+			"expansionPrompt": "Divide into subtasks for each data source integration, RestTemplate/WebClient setup, DTO creation, error handling implementation, circuit breaker configuration, retry logic, rate limiting, scheduled job setup, data mapping, and comprehensive testing",
+			"reasoning": "High complexity due to multiple external API integrations, error handling requirements, resilience patterns, and scheduled data synchronization needs"
+		},
+		{
+			"taskId": 8,
+			"taskTitle": "Implement Kakao Local API Integration",
+			"complexityScore": 6,
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "Create subtasks for WebClient configuration, API method implementation, quota tracking system, Redis integration for tracking, priority queue implementation, data enrichment logic, and fallback mechanism",
+			"reasoning": "Moderate to high complexity due to quota management requirements, priority processing, and fallback handling"
+		},
+		{
+			"taskId": 9,
+			"taskTitle": "Build Batch Processing System for Data Collection",
+			"complexityScore": 8,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Break down into Spring Batch configuration, job repository setup, individual job implementations, chunk processing configuration, parallel processing setup, skip/retry policies, monitoring integration, admin endpoints, and job testing",
+			"reasoning": "High complexity requiring Spring Batch expertise, parallel processing configuration, fault tolerance implementation, and comprehensive job monitoring"
+		},
+		{
+			"taskId": 10,
+			"taskTitle": "Create RESTful API Controllers and DTOs",
+			"complexityScore": 5,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Create subtasks for each controller implementation, DTO creation with validation, pagination setup, error handling, HATEOAS implementation, and CORS configuration",
+			"reasoning": "Moderate complexity with standard REST patterns, but requires proper DTO design, validation, and error handling strategy"
+		},
+		{
+			"taskId": 11,
+			"taskTitle": "Implement Location-Based Search Service",
+			"complexityScore": 7,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Divide into PostGIS function implementation, nearby search algorithm, distance calculations, clustering implementation, bounding box queries, unit conversion handling, caching strategy, and performance optimization",
+			"reasoning": "High complexity due to spatial algorithms, PostGIS function usage, clustering requirements, and performance considerations for large datasets"
+		},
+		{
+			"taskId": 12,
+			"taskTitle": "Initialize Next.js 14 Frontend Project",
+			"complexityScore": 4,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Create subtasks for Next.js setup with App Router, TypeScript configuration, Tailwind CSS setup with custom theme, Shadcn/ui integration, and project structure implementation",
+			"reasoning": "Moderate complexity with straightforward setup process, but requires proper configuration of multiple tools and libraries"
+		},
+		{
+			"taskId": 13,
+			"taskTitle": "Integrate Naver Map SDK and Create Map Component",
+			"complexityScore": 7,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Break down into SDK integration, TypeScript typing setup, MapContainer component, custom marker implementation, clustering setup, info window creation, map controls, event handling, and performance optimization",
+			"reasoning": "High complexity due to external SDK integration, custom marker system, clustering implementation, and performance requirements for large marker sets"
+		},
+		{
+			"taskId": 14,
+			"taskTitle": "Build Search Interface and Filtering Components",
+			"complexityScore": 6,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Create subtasks for SearchBar with debouncing, autocomplete implementation, FilterPanel creation, SearchResults component, view toggle functionality, URL parameter sync, loading states, and accessibility features",
+			"reasoning": "Moderate to high complexity requiring state management, real-time updates, URL synchronization, and proper UX considerations"
+		},
+		{
+			"taskId": 15,
+			"taskTitle": "Implement Route Planning Service with Naver Directions API",
+			"complexityScore": 7,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Divide into API integration, single route calculation, multi-waypoint optimization algorithm, distance/time calculations, direction generation, Redis caching implementation, error handling, and fallback mechanisms",
+			"reasoning": "High complexity due to waypoint optimization algorithm implementation, API integration, and caching strategy requirements"
+		},
+		{
+			"taskId": 16,
+			"taskTitle": "Create Route Planning UI Components",
+			"complexityScore": 6,
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "Create subtasks for RoutePlanner component, waypoint management UI, drag-and-drop implementation, polyline visualization, directions display, route sharing functionality, and localStorage integration",
+			"reasoning": "Moderate to high complexity with drag-and-drop functionality, map visualization integration, and state persistence requirements"
+		},
+		{
+			"taskId": 17,
+			"taskTitle": "Integrate LangChain4j for Natural Language Processing",
+			"complexityScore": 8,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Break down into LangChain4j setup, OpenAI configuration, intent classifier implementation, prompt template design, structured output parsing, query understanding logic, fallback mechanisms, semantic caching setup, and cost optimization",
+			"reasoning": "High complexity requiring AI/LLM integration expertise, prompt engineering, caching strategy for cost control, and fallback handling"
+		},
+		{
+			"taskId": 18,
+			"taskTitle": "Implement API Documentation and Testing Framework",
+			"complexityScore": 5,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Create subtasks for SpringDoc configuration, Swagger UI customization, example documentation, TestContainers setup, integration test implementation, and performance test creation",
+			"reasoning": "Moderate complexity with well-established patterns for API documentation and testing, but requires comprehensive test coverage setup"
+		},
+		{
+			"taskId": 19,
+			"taskTitle": "Configure CI/CD Pipeline with GitHub Actions",
+			"complexityScore": 6,
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "Divide into CI workflow creation, test automation setup, Docker build configuration, deployment workflows, secret management, matrix build setup, and caching optimization",
+			"reasoning": "Moderate to high complexity requiring multi-stage pipeline design, secret management, and deployment automation for multiple environments"
+		},
+		{
+			"taskId": 20,
+			"taskTitle": "Implement Monitoring and Performance Optimization",
+			"complexityScore": 7,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Create subtasks for Actuator configuration, Micrometer metrics setup, custom health checks, logging implementation, database monitoring, JVM metrics, alert configuration, dashboard creation, and performance optimization",
+			"reasoning": "High complexity requiring comprehensive monitoring strategy, metric collection, alerting setup, and performance analysis capabilities"
+		}
+	]
+}
