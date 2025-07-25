@@ -232,10 +232,276 @@ CREATE TABLE ai_query_cache (
     └── POST   /intent       # 의도 분석
 ```
 
-### 5.2 GraphQL 고려사항 (Phase 3+)
-- 복잡한 쿼리 최적화
-- 클라이언트별 필드 선택
-- 실시간 구독 (가맹점 업데이트)
+### 5.2 API 엔드포인트 상세 명세
+
+#### 인증 API
+
+```typescript
+// POST /api/v1/auth/login
+interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  user: {
+    id: number;
+    email: string;
+    name: string;
+    role: string;
+  };
+}
+
+// POST /api/v1/auth/refresh
+interface RefreshTokenRequest {
+  refreshToken: string;
+}
+
+interface RefreshTokenResponse {
+  accessToken: string;
+  expiresIn: number;
+}
+
+// POST /api/v1/auth/logout
+// Header: Authorization: Bearer {token}
+// Response: 204 No Content
+```
+
+#### 가맹점 API
+
+```typescript
+// GET /api/v1/merchants
+// Query params: ?cardTypes=CHILD_MEAL,CULTURE_NURI&lat=37.5666805&lng=126.9784147&radius=1000
+interface MerchantListResponse {
+  content: Merchant[];
+  pageable: {
+    page: number;
+    size: number;
+    sort: string[];
+  };
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
+}
+
+// GET /api/v1/merchants/{id}
+interface MerchantDetailResponse extends Merchant {
+  distance?: number; // 현재 위치에서의 거리 (미터)
+  reviews?: Review[];
+  averageRating?: number;
+  reviewCount?: number;
+}
+
+// GET /api/v1/merchants/nearby
+// Query params: ?lat=37.5666805&lng=126.9784147&radius=500&cardTypes=CHILD_MEAL
+interface NearbyMerchantsRequest {
+  lat: number;
+  lng: number;
+  radius?: number; // 기본값: 500m
+  cardTypes?: string[];
+  categories?: string[];
+  limit?: number; // 기본값: 20
+}
+
+interface NearbyMerchantsResponse {
+  merchants: MerchantWithDistance[];
+  center: { lat: number; lng: number };
+  radius: number;
+}
+
+interface MerchantWithDistance extends Merchant {
+  distance: number; // 미터 단위
+  walkingTime?: number; // 분 단위
+}
+
+// GET /api/v1/merchants/search
+// Query params: ?query=편의점&cardTypes=CHILD_MEAL
+interface MerchantSearchResponse extends MerchantListResponse {
+  query: string;
+  suggestions?: string[]; // 검색어 제안
+}
+```
+
+#### 카드 API
+
+```typescript
+// GET /api/v1/cards
+interface CardListResponse {
+  cards: CardDetail[];
+}
+
+interface CardDetail extends Card {
+  description: string;
+  benefits: string[];
+  restrictions: string[];
+  issuer: string;
+  merchantCount: number;
+  popularCategories: Category[];
+}
+
+// GET /api/v1/cards/{code}
+interface CardDetailResponse extends CardDetail {
+  recentMerchants: Merchant[]; // 최근 추가된 가맹점
+  statistics: {
+    totalMerchants: number;
+    merchantsByCategory: { [key: string]: number };
+  };
+}
+```
+
+#### 경로 API
+
+```typescript
+// POST /api/v1/routes/calculate
+interface RouteCalculateRequest {
+  origin: { lat: number; lng: number };
+  destination: { lat: number; lng: number };
+  waypoints?: { lat: number; lng: number }[];
+  mode: 'walking' | 'transit' | 'driving';
+  departureTime?: string; // ISO 8601
+  avoidTolls?: boolean;
+}
+
+interface RouteCalculateResponse {
+  routes: Route[];
+  origin: Location;
+  destination: Location;
+  waypoints?: Location[];
+}
+
+interface Route {
+  summary: string;
+  distance: number; // 미터
+  duration: number; // 초
+  fare?: number; // 대중교통 요금
+  polyline: string; // 인코딩된 경로
+  steps: RouteStep[];
+}
+
+interface RouteStep {
+  instruction: string;
+  distance: number;
+  duration: number;
+  startLocation: { lat: number; lng: number };
+  endLocation: { lat: number; lng: number };
+  transitDetails?: TransitDetails;
+}
+
+interface TransitDetails {
+  line: string;
+  departure: string;
+  arrival: string;
+  numStops: number;
+}
+
+// GET /api/v1/routes/optimize
+// Query params: ?origin=37.5,126.9&waypoints=37.51,126.91;37.52,126.92&mode=walking
+interface OptimizeRouteRequest {
+  origin: string; // "lat,lng"
+  waypoints: string; // "lat1,lng1;lat2,lng2"
+  mode: string;
+}
+
+interface OptimizeRouteResponse {
+  optimizedOrder: number[];
+  totalDistance: number;
+  totalDuration: number;
+  route: Route;
+}
+```
+
+#### AI/자연어 API
+
+```typescript
+// POST /api/v1/ai/chat
+interface ChatRequest {
+  message: string;
+  context?: {
+    location?: { lat: number; lng: number };
+    previousQueries?: string[];
+    cardTypes?: string[];
+  };
+  sessionId?: string;
+}
+
+interface ChatResponse {
+  reply: string;
+  intent: 'search' | 'route' | 'info' | 'general';
+  entities?: {
+    cardTypes?: string[];
+    categories?: string[];
+    location?: string;
+    merchants?: Merchant[];
+  };
+  suggestions?: string[];
+  actions?: ChatAction[];
+}
+
+interface ChatAction {
+  type: 'show_merchants' | 'calculate_route' | 'filter_results';
+  data: any;
+}
+
+// POST /api/v1/ai/intent
+interface IntentRequest {
+  query: string;
+  context?: any;
+}
+
+interface IntentResponse {
+  intent: string;
+  confidence: number;
+  entities: { [key: string]: any };
+  requiresAI: boolean;
+}
+```
+
+#### 에러 응답 형식
+
+```typescript
+interface ErrorResponse {
+  timestamp: string;
+  status: number;
+  error: string;
+  message: string;
+  path: string;
+  requestId?: string;
+  details?: { [key: string]: any };
+}
+
+// 예시
+{
+  "timestamp": "2024-07-25T12:00:00Z",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Invalid coordinates provided",
+  "path": "/api/v1/merchants/nearby",
+  "requestId": "550e8400-e29b-41d4-a716-446655440000",
+  "details": {
+    "lat": "Latitude must be between -90 and 90",
+    "lng": "Longitude must be between -180 and 180"
+  }
+}
+```
+
+#### HTTP 상태 코드 규칙
+
+- `200 OK`: 성공적인 GET, PUT 요청
+- `201 Created`: 성공적인 POST 요청으로 리소스 생성
+- `204 No Content`: 성공적인 DELETE 요청
+- `400 Bad Request`: 잘못된 요청 형식
+- `401 Unauthorized`: 인증 필요
+- `403 Forbidden`: 권한 없음
+- `404 Not Found`: 리소스 없음
+- `409 Conflict`: 리소스 충돌
+- `422 Unprocessable Entity`: 유효성 검사 실패
+- `429 Too Many Requests`: Rate limit 초과
+- `500 Internal Server Error`: 서버 오류
+- `503 Service Unavailable`: 일시적 서비스 중단
 
 ### 5.3 API 타입 정의
 
@@ -292,6 +558,26 @@ interface Category {
 // 영업시간
 interface BusinessHours {
   [key: string]: string[]; // { "mon": ["09:00", "22:00"], ... }
+}
+
+// 위치 정보
+interface Location {
+  lat: number;
+  lng: number;
+  address?: string;
+  name?: string;
+}
+
+// 리뷰 정보
+interface Review {
+  id: number;
+  userId: number;
+  userName: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+  updatedAt?: string;
+  images?: string[];
 }
 ```
 
