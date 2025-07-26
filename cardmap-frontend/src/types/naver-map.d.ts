@@ -1,5 +1,31 @@
 declare namespace naver {
   namespace maps {
+    // KVO base class
+    class KVO {
+      addListener(eventName: string, listener: Function): any
+      removeListener(listeners: any): void
+      get(key: string): any
+      set(key: string, value: any): void
+      setValues(properties: any): void
+      bindTo(key: string, target: KVO, targetKey?: string): void
+      unbind(key: string): void
+      unbindAll(): void
+    }
+
+    // KVOArray for controls
+    class KVOArray<T> extends KVO {
+      clear(): void
+      forEach(callback: (element: T, index: number) => void): void
+      getArray(): T[]
+      getAt(index: number): T
+      getLength(): number
+      insertAt(index: number, element: T): void
+      pop(): T
+      push(element: T): number
+      removeAt(index: number): T
+      setAt(index: number, element: T): void
+    }
+
     class Map {
       constructor(element: HTMLElement | string, options: MapOptions)
       setCenter(latlng: LatLng | LatLngLiteral): void
@@ -8,7 +34,7 @@ declare namespace naver {
       getZoom(): number
       destroy(): void
       getElement(): HTMLElement
-      controls: Control[]
+      controls: { [key: number]: KVOArray<CustomControl> }
     }
 
     class LatLng {
@@ -123,17 +149,17 @@ declare namespace naver {
     interface InfoWindowOptions {
       content: string | HTMLElement
       position?: LatLng | LatLngLiteral
-      maxWidth?: number
+      maxWidth?: number  // default: 0 (no limit)
       pixelOffset?: Point
-      zIndex?: number
+      zIndex?: number  // default: 0
       disableAnchor?: boolean
       disableAutoPan?: boolean
-      anchorSkew?: boolean
-      anchorSize?: Size
-      anchorColor?: string
-      borderColor?: string
-      borderWidth?: number
-      backgroundColor?: string
+      anchorSkew?: boolean  // enable skew effect on speech bubble tail
+      anchorSize?: Size  // default: width 20, height 24
+      anchorColor?: string  // default: "#fff"
+      borderColor?: string  // default: "#333"
+      borderWidth?: number  // default: 1
+      backgroundColor?: string  // default: "#fff"
     }
 
     class MarkerClustering {
@@ -229,14 +255,34 @@ declare namespace naver {
       }
     }
 
-    // Control classes
-    interface Control {
-      clear(): void
-      push(control: CustomControl): void
+    // MapSystemProjection for overlay positioning
+    interface MapSystemProjection {
+      fromCoordToContainerPoint(coord: LatLng): Point
+      fromCoordToOffset(coord: LatLng): Point
+      fromOffsetToCoord(offset: Point): LatLng
+      fromContainerPointToCoord(containerPoint: Point): LatLng
     }
 
-    class CustomControl {
-      constructor(element: HTMLElement, options?: CustomControlOptions)
+    // Control classes - OverlayView is the base class
+    class OverlayView extends KVO {
+      setMap(map: Map | null): void
+      getMap(): Map | null
+      getPanes(): any
+      getProjection(): MapSystemProjection
+      onAdd(): void
+      onRemove(): void
+      draw(): void
+    }
+
+    class CustomControl extends KVO {
+      constructor(html: string, options?: CustomControlOptions)
+      setMap(map: Map | null): void
+      getElement(): HTMLElement
+      setOptions(options: CustomControlOptions): void
+      setPosition(position: number): void
+      html: string
+      map: Map | null
+      _element: HTMLElement
     }
 
     interface CustomControlOptions {

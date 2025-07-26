@@ -715,6 +715,33 @@ public class AIQueryOptimizer {
 4. 예시: Next.js, React, Tailwind CSS, Naver Maps API 등
 5. 공식 문서 기반으로 정확한 구현 진행
 
+#### Naver Maps API 사용 가이드라인
+1. **커스텀 컨트롤 추가 방법**
+   ```typescript
+   // ❌ 잘못된 방법 (작동하지 않음)
+   map.controls[naver.maps.Position.TOP_LEFT].push(control)
+   
+   // ✅ 올바른 방법
+   const customControl = new naver.maps.CustomControl('<div>HTML</div>', {
+     position: naver.maps.Position.TOP_LEFT
+   })
+   customControl.setMap(map)
+   ```
+
+2. **InfoWindow 생성 시 주요 옵션**
+   - `content`: HTML 문자열 또는 HTMLElement
+   - `anchorSkew`: 말풍선 꼬리 기울임 효과 (boolean)
+   - `anchorSize`: 말풍선 꼬리 크기 (기본값: width 20, height 24)
+   - `anchorColor`: 말풍선 꼬리 색상 (기본값: "#fff")
+   - `backgroundColor`: 배경색 (기본값: "#fff")
+   - `borderColor`: 테두리 색상 (기본값: "#333")
+   - `borderWidth`: 테두리 두께 (기본값: 1)
+
+3. **자주 하는 실수**
+   - map.controls는 KVOArray 타입이므로 직접 push() 사용 불가
+   - CustomControl은 HTML 문자열을 받음 (HTMLElement가 아님)
+   - InfoWindow의 close 이벤트는 직접 구현해야 함
+
 #### E2E 테스트
 1. 각 task 완료 전 Playwright MCP를 사용하여 E2E 테스트 수행
 2. 주요 사용자 시나리오 자동화 테스트
@@ -727,7 +754,42 @@ public class AIQueryOptimizer {
 - **정적 분석**: ESLint + Prettier
 - **타입 안정성**: TypeScript strict mode
 
-### 9.3 배포 전략
+### 9.3 코드 스타일 가이드라인
+
+#### Import/Export 패턴
+1. **상수 Export 규칙**
+   ```typescript
+   // ✅ 상수는 UPPER_SNAKE_CASE로 export
+   export const CARD_STYLES = {
+     CHILD_MEAL: { ... }
+   }
+   
+   // ✅ Named import 사용
+   import { CARD_STYLES } from '@/constants/cardStyles'
+   
+   // ❌ Default export 사용 금지 (상수의 경우)
+   export default CARD_STYLES  // 금지
+   ```
+
+2. **컴포넌트 Export 규칙**
+   ```typescript
+   // ✅ React 컴포넌트는 default export
+   export default function MapContainer() { ... }
+   
+   // ✅ 타입은 named export
+   export interface MapContainerProps { ... }
+   ```
+
+3. **테스트 Mock 일관성**
+   - Mock 데이터의 export 이름은 실제 코드와 동일하게 유지
+   - 예: `CARD_STYLES`로 export했다면 mock도 `CARD_STYLES`로
+
+#### 타입 정의 규칙
+1. 외부 라이브러리 타입이 불완전한 경우 즉시 `.d.ts` 파일 업데이트
+2. 타입 정의 시 주석으로 기본값 명시
+3. 선택적 프로퍼티는 용도와 기본값 주석 추가
+
+### 9.4 배포 전략
 - **Phase 1-2**: Blue-Green
 - **Phase 3+**: Canary Deployment
 - **Rollback**: 자동화된 롤백
