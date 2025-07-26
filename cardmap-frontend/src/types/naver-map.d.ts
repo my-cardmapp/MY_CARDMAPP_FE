@@ -33,22 +33,24 @@ declare namespace naver {
     }
 
     interface ZoomControlOptions {
-      position: ControlPosition
+      position: number
     }
 
-    enum ControlPosition {
-      TOP_LEFT = 1,
-      TOP_CENTER = 2,
-      TOP_RIGHT = 3,
-      LEFT_CENTER = 4,
-      LEFT_TOP = 5,
-      LEFT_BOTTOM = 6,
-      RIGHT_TOP = 7,
-      RIGHT_CENTER = 8,
-      RIGHT_BOTTOM = 9,
-      BOTTOM_LEFT = 10,
-      BOTTOM_CENTER = 11,
-      BOTTOM_RIGHT = 12,
+    // Position constants
+    const Position: {
+      CENTER: 0
+      TOP_LEFT: 1
+      TOP_CENTER: 2
+      TOP_RIGHT: 3
+      LEFT_CENTER: 4
+      LEFT_TOP: 5
+      LEFT_BOTTOM: 6
+      RIGHT_TOP: 7
+      RIGHT_CENTER: 8
+      RIGHT_BOTTOM: 9
+      BOTTOM_LEFT: 10
+      BOTTOM_CENTER: 11
+      BOTTOM_RIGHT: 12
     }
 
     class Marker {
@@ -165,6 +167,22 @@ declare namespace naver {
       overlay: any
     }
 
+    // Event handling
+    class Event {
+      static addListener(
+        instance: any,
+        eventName: string,
+        handler: (e?: any) => void
+      ): MapEventListener
+      static removeListener(listener: MapEventListener): void
+    }
+
+    interface MapEventListener {
+      eventName: string
+      listener: Function
+      target: any
+    }
+
     // Utility functions
     namespace Service {
       function geocode(
@@ -202,5 +220,12 @@ declare namespace naver {
         ERROR = 500,
       }
     }
+  }
+}
+
+declare global {
+  interface Window {
+    naver: typeof naver
+    navermap_authFailure?: () => void
   }
 }

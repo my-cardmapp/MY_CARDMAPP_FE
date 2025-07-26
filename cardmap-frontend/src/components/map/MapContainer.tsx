@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useEffect, useRef } from 'react'
-import { useNaverMapScript } from '@/hooks/useNaverMapScript'
 import { useMapContext } from '@/contexts/MapContext'
 import { useMarkers } from '@/hooks/useMarkers'
 import { MapSkeleton } from './MapSkeleton'
@@ -27,8 +26,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
   activeCardTypes,
 }) => {
   const mapRef = useRef<HTMLDivElement>(null)
-  const { isLoading, isError, isLoaded } = useNaverMapScript()
-  const { map, setMap } = useMapContext()
+  const { map, setMap, isScriptLoaded, isScriptError } = useMapContext()
   
   // Use markers hook
   const {
@@ -42,31 +40,49 @@ const MapContainer: React.FC<MapContainerProps> = ({
   })
 
   useEffect(() => {
-    if (!isLoaded || !mapRef.current) return
+    console.log('MapContainer - Script state:', {
+      isScriptLoaded,
+      hasMapRef: !!mapRef.current,
+      hasNaver: typeof window !== 'undefined' && !!window.naver,
+      hasNaverMaps: typeof window !== 'undefined' && !!window.naver?.maps,
+      hasPosition: typeof window !== 'undefined' && !!window.naver?.maps?.Position
+    })
+    
+    if (!isScriptLoaded || !mapRef.current) return
 
-    // Initialize map
-    const mapOptions: naver.maps.MapOptions = {
-      center: new naver.maps.LatLng(center.lat, center.lng),
-      zoom,
-      zoomControl: true,
-      zoomControlOptions: {
-        position: naver.maps.ControlPosition.TOP_RIGHT,
-      },
-      mapTypeControl: true,
-      scaleControl: true,
-      logoControl: true,
-      mapDataControl: true,
+    let newMap: naver.maps.Map | null = null
+
+    try {
+      // Initialize map
+      const mapOptions: naver.maps.MapOptions = {
+        center: new naver.maps.LatLng(center.lat, center.lng),
+        zoom,
+        zoomControl: true,
+        zoomControlOptions: {
+          position: naver.maps.Position.TOP_RIGHT,
+        },
+        mapTypeControl: true,
+        scaleControl: true,
+        logoControl: true,
+        mapDataControl: true,
+      }
+
+      console.log('Creating map with options:', mapOptions)
+      newMap = new naver.maps.Map(mapRef.current, mapOptions)
+      console.log('Map created successfully:', !!newMap)
+      setMap(newMap)
+    } catch (error) {
+      console.error('Error creating map:', error)
     }
-
-    const newMap = new naver.maps.Map(mapRef.current, mapOptions)
-    setMap(newMap)
 
     // Cleanup
     return () => {
-      newMap.destroy()
-      setMap(null)
+      if (newMap) {
+        newMap.destroy()
+        setMap(null)
+      }
     }
-  }, [isLoaded, center.lat, center.lng, zoom, setMap])
+  }, [isScriptLoaded, center.lat, center.lng, zoom, setMap])
 
   // Add merchants when they change
   useEffect(() => {
@@ -93,11 +109,11 @@ const MapContainer: React.FC<MapContainerProps> = ({
     }
   }, [onMarkerClick, setOnMarkerClick])
 
-  if (isLoading) {
+  if (!isScriptLoaded && !isScriptError) {
     return <MapSkeleton />
   }
 
-  if (isError) {
+  if (isScriptError) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-100">
         <div className="text-center p-8">

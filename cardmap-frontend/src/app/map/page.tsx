@@ -76,9 +76,10 @@ export default function MapPage() {
             merchants={sampleMerchants}
             onMarkerClick={handleMarkerClick}
             activeCardTypes={activeCardTypes}
+            enableClustering={false}
           />
           
-          {/* 선택된 가맹점 정보 (임시) */}
+          {/* 선택된 가맹점 정보 */}
           {selectedMerchant && (
             <div className="absolute bottom-4 left-4 right-4 md:left-auto md:right-4 bg-white rounded-lg shadow-lg p-4 max-w-md animate-in slide-in-from-bottom duration-200">
               <button

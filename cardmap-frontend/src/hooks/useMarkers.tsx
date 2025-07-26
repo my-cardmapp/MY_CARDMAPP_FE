@@ -23,9 +23,10 @@ export function useMarkers(
     const manager = new MarkerManager(map)
     setMarkerManager(manager)
 
-    // Enable clustering by default
-    if (options.enableClustering ?? true) {
-      manager.enableClustering()
+    // Enable clustering only if explicitly enabled
+    if (options.enableClustering === true) {
+      // TODO: Load MarkerClustering script first
+      // manager.enableClustering()
     }
 
     return () => {
@@ -39,7 +40,8 @@ export function useMarkers(
     if (!markerManager) return
 
     if (isClusteringEnabled) {
-      markerManager.enableClustering()
+      // TODO: Load MarkerClustering script first
+      // markerManager.enableClustering()
     } else {
       markerManager.disableClustering()
     }

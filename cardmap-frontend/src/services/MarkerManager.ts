@@ -38,14 +38,16 @@ export class MarkerManager {
       map: this.shouldShowMarker(merchant) ? this.map : null,
       title: merchant.name,
       icon: {
-        path: cardStyle.markerIcon.path,
-        fillColor: cardStyle.markerIcon.fillColor,
-        fillOpacity: cardStyle.markerIcon.fillOpacity,
-        strokeColor: cardStyle.markerIcon.strokeColor,
-        strokeWeight: cardStyle.markerIcon.strokeWeight,
-        scale: cardStyle.markerIcon.scale,
-        anchor: new naver.maps.Point(12, 24),
-      } as naver.maps.SymbolIcon,
+        content: cardStyle.markerIcon.content,
+        size: new naver.maps.Size(
+          cardStyle.markerIcon.size.width,
+          cardStyle.markerIcon.size.height
+        ),
+        anchor: new naver.maps.Point(
+          cardStyle.markerIcon.anchor.x,
+          cardStyle.markerIcon.anchor.y
+        ),
+      } as naver.maps.HtmlIcon,
       zIndex: 100,
     })
 
@@ -193,16 +195,15 @@ export class MarkerManager {
     this.markers.forEach(({ marker, merchant }) => {
       const cardCode = merchant.cards[0]?.code || 'DEFAULT'
       const cardStyle = getCardStyle(cardCode)
+      
+      const size = Math.floor(24 * scale)
+      const content = cardStyle.markerIcon.content.replace(/width: 24px; height: 24px/g, `width: ${size}px; height: ${size}px`)
 
       marker.setIcon({
-        path: cardStyle.markerIcon.path,
-        fillColor: cardStyle.markerIcon.fillColor,
-        fillOpacity: cardStyle.markerIcon.fillOpacity,
-        strokeColor: cardStyle.markerIcon.strokeColor,
-        strokeWeight: cardStyle.markerIcon.strokeWeight,
-        scale: cardStyle.markerIcon.scale * scale,
-        anchor: new naver.maps.Point(12 * scale, 24 * scale),
-      } as naver.maps.SymbolIcon)
+        content: content,
+        size: new naver.maps.Size(size, size),
+        anchor: new naver.maps.Point(size / 2, size),
+      } as naver.maps.HtmlIcon)
     })
   }
 
