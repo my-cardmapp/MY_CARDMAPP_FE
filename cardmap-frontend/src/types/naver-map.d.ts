@@ -7,6 +7,8 @@ declare namespace naver {
       getCenter(): LatLng
       getZoom(): number
       destroy(): void
+      getElement(): HTMLElement
+      controls: Control[]
     }
 
     class LatLng {
@@ -126,6 +128,12 @@ declare namespace naver {
       zIndex?: number
       disableAnchor?: boolean
       disableAutoPan?: boolean
+      anchorSkew?: boolean
+      anchorSize?: Size
+      anchorColor?: string
+      borderColor?: string
+      borderWidth?: number
+      backgroundColor?: string
     }
 
     class MarkerClustering {
@@ -219,6 +227,51 @@ declare namespace naver {
         OK = 200,
         ERROR = 500,
       }
+    }
+
+    // Control classes
+    interface Control {
+      clear(): void
+      push(control: CustomControl): void
+    }
+
+    class CustomControl {
+      constructor(element: HTMLElement, options?: CustomControlOptions)
+    }
+
+    interface CustomControlOptions {
+      position?: number
+    }
+
+    class ZoomControl extends CustomControl {
+      constructor(options?: ZoomControlOptions)
+    }
+
+    interface ZoomControlOptions {
+      position?: number
+      style?: ZoomControlStyle
+      legendDisabled?: boolean
+    }
+
+    enum ZoomControlStyle {
+      LARGE = 0,
+      SMALL = 1,
+    }
+
+    class ScaleControl extends CustomControl {
+      constructor(options?: ScaleControlOptions)
+    }
+
+    interface ScaleControlOptions {
+      position?: number
+    }
+
+    class LogoControl extends CustomControl {
+      constructor(options?: LogoControlOptions)
+    }
+
+    interface LogoControlOptions {
+      position?: number
     }
   }
 }

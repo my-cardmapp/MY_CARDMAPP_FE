@@ -1,9 +1,11 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useMapContext } from '@/contexts/MapContext'
 import { useMarkers } from '@/hooks/useMarkers'
 import { MapSkeleton } from './MapSkeleton'
+import MerchantInfoWindow from './MerchantInfoWindow'
+import MapControls from './MapControls'
 import type { Merchant } from '@/types/merchant'
 
 interface MapContainerProps {
@@ -27,6 +29,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
 }) => {
   const mapRef = useRef<HTMLDivElement>(null)
   const { map, setMap, isScriptLoaded, isScriptError } = useMapContext()
+  const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null)
   
   // Use markers hook
   const {
@@ -36,7 +39,10 @@ const MapContainer: React.FC<MapContainerProps> = ({
     setOnMarkerClick,
   } = useMarkers(map, {
     enableClustering,
-    onMarkerClick,
+    onMarkerClick: (merchant) => {
+      setSelectedMerchant(merchant)
+      onMarkerClick?.(merchant)
+    },
   })
 
   useEffect(() => {
@@ -59,12 +65,12 @@ const MapContainer: React.FC<MapContainerProps> = ({
         zoom,
         zoomControl: true,
         zoomControlOptions: {
-          position: naver.maps.Position.TOP_RIGHT,
+          position: naver.maps.Position.TOP_LEFT,
         },
-        mapTypeControl: true,
+        mapTypeControl: false,
         scaleControl: true,
         logoControl: true,
-        mapDataControl: true,
+        mapDataControl: false,
       }
 
       console.log('Creating map with options:', mapOptions)
@@ -144,11 +150,25 @@ const MapContainer: React.FC<MapContainerProps> = ({
   }
 
   return (
-    <div
-      ref={mapRef}
-      data-testid="map-container"
-      className={`w-full h-full ${className}`}
-    />
+    <div className="relative w-full h-full">
+      <div
+        ref={mapRef}
+        data-testid="map-container"
+        className={`w-full h-full ${className}`}
+      />
+      
+      {/* Map Controls */}
+      {map && <MapControls map={map} />}
+      
+      {/* Merchant Info Window */}
+      {map && (
+        <MerchantInfoWindow
+          map={map}
+          merchant={selectedMerchant}
+          onClose={() => setSelectedMerchant(null)}
+        />
+      )}
+    </div>
   )
 }
 
