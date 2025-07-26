@@ -708,6 +708,20 @@ public class AIQueryOptimizer {
 3. 최소한의 코드로 테스트 통과
 4. 리팩토링
 
+#### 라이브러리 사용법 조회
+1. 사용법이 불확실한 라이브러리는 Context7 MCP를 활용하여 최신 문서 확인
+2. `mcp__Context7__resolve-library-id`로 라이브러리 ID 검색
+3. `mcp__Context7__get-library-docs`로 상세 문서 조회
+4. 예시: Next.js, React, Tailwind CSS, Naver Maps API 등
+5. 공식 문서 기반으로 정확한 구현 진행
+
+#### E2E 테스트
+1. 각 task 완료 전 Playwright MCP를 사용하여 E2E 테스트 수행
+2. 주요 사용자 시나리오 자동화 테스트
+3. 크로스 브라우저 테스트 (Chrome, Firefox, Safari)
+4. 모바일 뷰포트 테스트
+5. E2E 테스트 통과 후 task를 완료 상태로 변경
+
 ### 9.2 코드 품질
 - **테스트 커버리지**: 80% 이상
 - **정적 분석**: ESLint + Prettier
