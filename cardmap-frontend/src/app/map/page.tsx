@@ -1,13 +1,16 @@
 'use client'
 
-import { useState } from 'react'
-import { MapContainer, MapProvider } from '@/components/map'
-import { sampleMerchants } from '@/data/sampleMerchants'
+import { useState, useCallback } from 'react'
+import { MapProvider } from '@/contexts/MapContext'
+import MapContainer from '@/components/map/MapContainerWorking'
+import { sampleMerchants as MOCK_MERCHANTS } from '@/data/sampleMerchants'
 import type { Merchant } from '@/types/merchant'
+import type { MapBounds } from '@/hooks/useMapBounds'
 
 export default function MapPage() {
   const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null)
   const [activeCardTypes, setActiveCardTypes] = useState<string[]>([])
+  const [currentBounds, setCurrentBounds] = useState<MapBounds | null>(null)
 
   const handleMarkerClick = (merchant: Merchant) => {
     setSelectedMerchant(merchant)
@@ -22,6 +25,17 @@ export default function MapPage() {
       }
     })
   }
+
+  const handleBoundsChange = useCallback((bounds: MapBounds) => {
+    console.log('Map bounds changed:', bounds)
+    setCurrentBounds(bounds)
+    // Here you would typically fetch merchants for the new bounds
+    // For now, we're using mock data
+  }, [])
+
+  const handleMapReady = useCallback((map: naver.maps.Map) => {
+    console.log('Map is ready:', map)
+  }, [])
 
   return (
     <MapProvider>
@@ -73,10 +87,9 @@ export default function MapPage() {
         
         <main className="flex-1 relative">
           <MapContainer 
-            merchants={sampleMerchants}
+            merchants={MOCK_MERCHANTS}
             onMarkerClick={handleMarkerClick}
-            activeCardTypes={activeCardTypes}
-            enableClustering={false}
+            onMapReady={handleMapReady}
           />
           
           {/* 선택된 가맹점 정보 */}
@@ -115,6 +128,17 @@ export default function MapPage() {
                   📞 {selectedMerchant.phone}
                 </p>
               )}
+            </div>
+          )}
+
+          {/* Bounds info (debug) */}
+          {currentBounds && (
+            <div className="absolute bottom-4 left-4 z-10 bg-white p-2 rounded shadow text-xs max-w-xs">
+              <div className="font-semibold mb-1">Viewport Bounds</div>
+              <div>North: {currentBounds.north.toFixed(6)}</div>
+              <div>South: {currentBounds.south.toFixed(6)}</div>
+              <div>East: {currentBounds.east.toFixed(6)}</div>
+              <div>West: {currentBounds.west.toFixed(6)}</div>
             </div>
           )}
         </main>
