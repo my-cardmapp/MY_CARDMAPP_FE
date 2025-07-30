@@ -14,8 +14,7 @@ export function NaverMapScript({
   onLoad, 
   onError 
 }: NaverMapScriptProps) {
-  const [isScriptLoaded, setIsScriptLoaded] = useState(false)
-
+  // Removed internal state to avoid re-render issues
   const handleScriptLoad = useCallback(() => {
     // 인증 실패 핸들러 설정
     window.navermap_authFailure = () => {
@@ -26,7 +25,6 @@ export function NaverMapScript({
     // Script 태그는 로드되었지만 실제 naver.maps 객체가 사용 가능한지 확인
     if (window.naver?.maps) {
       console.log('✅ Naver Map SDK loaded successfully')
-      setIsScriptLoaded(true)
       onLoad?.()
     } else {
       console.warn('⚠️ Script loaded but naver.maps not available')
@@ -34,7 +32,6 @@ export function NaverMapScript({
       setTimeout(() => {
         if (window.naver?.maps) {
           console.log('✅ Naver Map SDK available after retry')
-          setIsScriptLoaded(true)
           onLoad?.()
         } else {
           console.error('❌ Naver Map SDK failed to initialize')

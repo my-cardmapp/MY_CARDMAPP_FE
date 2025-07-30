@@ -2,118 +2,191 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import { useMapContext } from '@/contexts/MapContext'
-import { useMarkers } from '@/hooks/useMarkers'
 import { MapSkeleton } from './MapSkeleton'
-import MerchantInfoWindow from './MerchantInfoWindow'
 import MapControls from './MapControls'
-import type { Merchant } from '@/types/merchant'
+import type { Merchant } from '@/types'
 
 interface MapContainerProps {
   center?: { lat: number; lng: number }
   zoom?: number
   className?: string
   merchants?: Merchant[]
-  onMarkerClick?: (merchant: Merchant) => void
-  enableClustering?: boolean
   activeCardTypes?: string[]
+  onMarkerClick?: (merchant: Merchant) => void
+  onMapReady?: (map: naver.maps.Map) => void
 }
 
 const MapContainer: React.FC<MapContainerProps> = ({
-  center = { lat: 37.5666805, lng: 126.9784147 }, // Seoul City Hall
+  center = { lat: 37.5666805, lng: 126.9784147 },
   zoom = 15,
   className = '',
   merchants = [],
+  activeCardTypes = [],
   onMarkerClick,
-  enableClustering = true,
-  activeCardTypes,
+  onMapReady,
 }) => {
+  console.log('MapContainer rendered with merchants:', merchants.length)
+  
   const mapRef = useRef<HTMLDivElement>(null)
   const { map, setMap, isScriptLoaded, isScriptError } = useMapContext()
-  const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null)
-  
-  // Use markers hook
-  const {
-    addMerchants,
-    filterByCardType,
-    clearFilter,
-    setOnMarkerClick,
-  } = useMarkers(map, {
-    enableClustering,
-    onMarkerClick: (merchant) => {
-      setSelectedMerchant(merchant)
-      onMarkerClick?.(merchant)
-    },
-  })
+  const [isDragging, setIsDragging] = useState(false)
+  const [currentBounds, setCurrentBounds] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const markersRef = useRef<naver.maps.Marker[]>([])
 
+  // Initialize map
   useEffect(() => {
-    console.log('MapContainer - Script state:', {
-      isScriptLoaded,
-      hasMapRef: !!mapRef.current,
-      hasNaver: typeof window !== 'undefined' && !!window.naver,
-      hasNaverMaps: typeof window !== 'undefined' && !!window.naver?.maps,
-      hasPosition: typeof window !== 'undefined' && !!window.naver?.maps?.Position
+    if (!isScriptLoaded || !mapRef.current || map) return
+
+    console.log('MapContainer - Creating map...')
+    const newMap = new naver.maps.Map(mapRef.current, {
+      center: new naver.maps.LatLng(center.lat, center.lng),
+      zoom,
+      zoomControl: true,
+      zoomControlOptions: {
+        position: naver.maps.Position.TOP_LEFT,
+      },
+      mapTypeControl: false,
+      scaleControl: true,
+      logoControl: true,
+      mapDataControl: false,
     })
     
-    if (!isScriptLoaded || !mapRef.current) return
-
-    let newMap: naver.maps.Map | null = null
-
-    try {
-      // Initialize map
-      const mapOptions: naver.maps.MapOptions = {
-        center: new naver.maps.LatLng(center.lat, center.lng),
-        zoom,
-        zoomControl: true,
-        zoomControlOptions: {
-          position: naver.maps.Position.TOP_LEFT,
-        },
-        mapTypeControl: false,
-        scaleControl: true,
-        logoControl: true,
-        mapDataControl: false,
+    setMap(newMap)
+    
+    // Map event listeners
+    if (newMap) {
+      // Click event
+      naver.maps.Event.addListener(newMap, 'click', (e: any) => {
+        console.log('Map clicked at:', e.coord)
+      })
+      
+      // Drag events
+      naver.maps.Event.addListener(newMap, 'dragstart', () => {
+        setIsDragging(true)
+      })
+      
+      naver.maps.Event.addListener(newMap, 'dragend', () => {
+        setIsDragging(false)
+      })
+      
+      // Zoom event
+      naver.maps.Event.addListener(newMap, 'zoom_changed', () => {
+        console.log('Zoom changed to:', newMap.getZoom())
+      })
+      
+      // Bounds changed with debouncing
+      let boundsTimeout: NodeJS.Timeout
+      naver.maps.Event.addListener(newMap, 'bounds_changed', () => {
+        clearTimeout(boundsTimeout)
+        boundsTimeout = setTimeout(() => {
+          const bounds = (newMap as any).getBounds()
+          if (bounds) {
+            const boundsData = {
+              north: bounds.getNE().lat(),
+              south: bounds.getSW().lat(),
+              east: bounds.getNE().lng(),
+              west: bounds.getSW().lng(),
+            }
+            console.log('Bounds changed:', boundsData)
+            setCurrentBounds(boundsData)
+            
+            // Save viewport to sessionStorage
+            const center = newMap.getCenter()
+            const zoom = newMap.getZoom()
+            sessionStorage.setItem('mapViewport', JSON.stringify({
+              center: { lat: center.lat(), lng: center.lng() },
+              zoom
+            }))
+            
+            // Simulate loading for demonstration
+            setIsLoading(true)
+            setTimeout(() => setIsLoading(false), 300)
+          }
+        }, 500)
+      })
+      
+      // Restore viewport from sessionStorage
+      const savedViewport = sessionStorage.getItem('mapViewport')
+      if (savedViewport) {
+        try {
+          const { center: savedCenter, zoom: savedZoom } = JSON.parse(savedViewport)
+          newMap.setCenter(new naver.maps.LatLng(savedCenter.lat, savedCenter.lng))
+          newMap.setZoom(savedZoom)
+        } catch (error) {
+          console.error('Failed to restore viewport:', error)
+        }
       }
-
-      console.log('Creating map with options:', mapOptions)
-      newMap = new naver.maps.Map(mapRef.current, mapOptions)
-      console.log('Map created successfully:', !!newMap)
-      setMap(newMap)
-    } catch (error) {
-      console.error('Error creating map:', error)
+      
+      // Call onMapReady callback
+      onMapReady?.(newMap)
     }
 
-    // Cleanup
     return () => {
       if (newMap) {
         newMap.destroy()
         setMap(null)
       }
     }
-  }, [isScriptLoaded, center.lat, center.lng, zoom, setMap])
+  }, [isScriptLoaded, center.lat, center.lng, zoom, setMap, onMapReady])
 
-  // Add merchants when they change
+  // Add markers for merchants
   useEffect(() => {
-    if (!map || merchants.length === 0) return
-    
-    addMerchants(merchants)
-  }, [map, merchants, addMerchants])
+    console.log('MapContainer - Merchants:', merchants.length, 'Map:', !!map, 'Active filters:', activeCardTypes)
+    if (!map || !merchants.length) return
 
-  // Handle card type filtering
-  useEffect(() => {
-    if (!map) return
-    
-    if (activeCardTypes && activeCardTypes.length > 0) {
-      filterByCardType(activeCardTypes)
-    } else {
-      clearFilter()
-    }
-  }, [map, activeCardTypes, filterByCardType, clearFilter])
+    // Clear existing markers
+    markersRef.current.forEach(marker => marker.setMap(null))
+    markersRef.current = []
 
-  // Update marker click handler
-  useEffect(() => {
-    if (onMarkerClick) {
-      setOnMarkerClick(onMarkerClick)
-    }
-  }, [onMarkerClick, setOnMarkerClick])
+    // Filter merchants based on active card types
+    const filteredMerchants = activeCardTypes.length > 0
+      ? merchants.filter(merchant => 
+          merchant.cards.some(card => activeCardTypes.includes(card.code))
+        )
+      : []
+
+    console.log('Adding markers for', filteredMerchants.length, 'merchants (filtered from', merchants.length, ')')
+    // Add new markers
+    filteredMerchants.forEach(merchant => {
+      const marker = new naver.maps.Marker({
+        position: new naver.maps.LatLng(merchant.location.lat, merchant.location.lng),
+        map: map,
+        title: merchant.name,
+        icon: {
+          content: `
+            <div style="
+              background-color: ${merchant.cards[0]?.colorHex || '#FF0000'}; 
+              width: 32px; 
+              height: 32px; 
+              border-radius: 50%; 
+              border: 3px solid white; 
+              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-weight: bold;
+              color: white;
+              font-size: 14px;
+            ">
+              ${merchant.cards[0]?.name.charAt(0) || '가'}
+            </div>
+          `,
+          size: new naver.maps.Size(32, 32),
+          anchor: new naver.maps.Point(16, 16)
+        }
+      })
+
+      // Add click event
+      const listener = naver.maps.Event.addListener(marker, 'click', () => {
+        console.log('Marker clicked:', merchant.name)
+        onMarkerClick?.(merchant)
+      })
+      console.log('Click listener added for:', merchant.name, 'listener:', listener)
+
+      markersRef.current.push(marker)
+    })
+  }, [map, merchants, activeCardTypes, onMarkerClick])
 
   if (!isScriptLoaded && !isScriptError) {
     return <MapSkeleton />
@@ -157,16 +230,37 @@ const MapContainer: React.FC<MapContainerProps> = ({
         className={`w-full h-full ${className}`}
       />
       
+      {/* Loading indicator */}
+      {isLoading && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white px-4 py-2 rounded-lg shadow-lg z-10">
+          <div className="flex items-center space-x-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+            <span className="text-sm text-gray-600">가맹점 정보를 불러오는 중...</span>
+          </div>
+        </div>
+      )}
+      
+      {/* Dragging indicator */}
+      {isDragging && (
+        <div className="absolute inset-0 pointer-events-none z-10">
+          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-75 text-white px-4 py-2 rounded-lg">
+            <span className="text-sm">지도를 이동하는 중...</span>
+          </div>
+        </div>
+      )}
+      
       {/* Map Controls */}
       {map && <MapControls map={map} />}
       
-      {/* Merchant Info Window */}
-      {map && (
-        <MerchantInfoWindow
-          map={map}
-          merchant={selectedMerchant}
-          onClose={() => setSelectedMerchant(null)}
-        />
+      {/* Bounds display (for debugging) */}
+      {currentBounds && (
+        <div className="absolute bottom-4 left-4 bg-white p-3 rounded shadow-lg text-xs max-w-xs">
+          <div className="font-bold mb-1">Viewport Bounds</div>
+          <div>North: {currentBounds.north.toFixed(6)}</div>
+          <div>South: {currentBounds.south.toFixed(6)}</div>
+          <div>East: {currentBounds.east.toFixed(6)}</div>
+          <div>West: {currentBounds.west.toFixed(6)}</div>
+        </div>
       )}
     </div>
   )

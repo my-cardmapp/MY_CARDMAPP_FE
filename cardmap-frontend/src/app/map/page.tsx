@@ -2,10 +2,13 @@
 
 import { useState, useCallback } from 'react'
 import { MapProvider } from '@/contexts/MapContext'
-import MapContainer from '@/components/map/MapContainerWorking'
+import MapContainer from '@/components/map/MapContainer'
 import { sampleMerchants as MOCK_MERCHANTS } from '@/data/sampleMerchants'
 import type { Merchant } from '@/types/merchant'
 import type { MapBounds } from '@/hooks/useMapBounds'
+
+// 전체 카드 타입 정의
+const ALL_CARD_TYPES = ['CHILD_MEAL', 'CULTURE_NURI', 'LOCAL_CURRENCY'] as const
 
 export default function MapPage() {
   const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null)
@@ -24,6 +27,14 @@ export default function MapPage() {
         return [...prev, cardType]
       }
     })
+  }
+
+  const handleSelectAll = () => {
+    setActiveCardTypes([...ALL_CARD_TYPES])
+  }
+
+  const handleDeselectAll = () => {
+    setActiveCardTypes([])
   }
 
   const handleBoundsChange = useCallback((bounds: MapBounds) => {
@@ -49,7 +60,30 @@ export default function MapPage() {
               </div>
               
               {/* 카드 타입 필터 */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
+                {/* 전체 선택/해제 버튼 */}
+                <div className="flex gap-1 mr-2 pr-2 border-r border-gray-300">
+                  <button
+                    onClick={handleSelectAll}
+                    className="px-2 py-1 rounded text-sm bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                    title="모두 선택"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={handleDeselectAll}
+                    className="px-2 py-1 rounded text-sm bg-gray-500 text-white hover:bg-gray-600 transition-colors"
+                    title="모두 해제"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </button>
+                </div>
+                
+                {/* 개별 카드 필터 버튼 */}
                 <button
                   onClick={() => handleCardTypeFilter('CHILD_MEAL')}
                   className={`px-3 py-1 rounded-full text-sm transition-colors ${
@@ -88,6 +122,7 @@ export default function MapPage() {
         <main className="flex-1 relative">
           <MapContainer 
             merchants={MOCK_MERCHANTS}
+            activeCardTypes={activeCardTypes}
             onMarkerClick={handleMarkerClick}
             onMapReady={handleMapReady}
           />

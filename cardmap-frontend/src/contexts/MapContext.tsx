@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react'
 import { NaverMapScript } from '@/components/map/NaverMapScript'
 
 interface MapContextType {
@@ -30,9 +30,14 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
   const [isMapReady, setIsMapReady] = useState(false)
   const [isScriptLoaded, setIsScriptLoaded] = useState(false)
   const [isScriptError, setIsScriptError] = useState(false)
+  const naverMapClientId = process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID || ''
 
   const setMap = useCallback((newMap: naver.maps.Map | null) => {
-    setMapState(newMap)
+    setMapState(prevMap => {
+      // Only update if actually different
+      if (prevMap === newMap) return prevMap
+      return newMap
+    })
     setIsMapReady(!!newMap)
   }, [])
 
@@ -48,8 +53,6 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
     setIsScriptLoaded(false)
   }, [])
 
-  const naverMapClientId = process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID || ''
-
   return (
     <>
       <NaverMapScript 
@@ -62,7 +65,7 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
         isMapReady, 
         isScriptLoaded,
         isScriptError,
-        setMap 
+        setMap
       }}>
         {children}
       </MapContext.Provider>
