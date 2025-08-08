@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { MapProvider } from '@/contexts/MapContext'
 import MapContainer from '@/components/map/MapContainer'
 import { sampleMerchants as MOCK_MERCHANTS } from '@/data/sampleMerchants'
@@ -11,9 +12,46 @@ import type { MapBounds } from '@/hooks/useMapBounds'
 const ALL_CARD_TYPES = ['CHILD_MEAL', 'CULTURE_NURI', 'LOCAL_CURRENCY'] as const
 
 export default function MapPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null)
   const [activeCardTypes, setActiveCardTypes] = useState<string[]>([])
   const [currentBounds, setCurrentBounds] = useState<MapBounds | null>(null)
+
+  console.log('MapPage - activeCardTypes state:', activeCardTypes)
+
+  // Initialize filters from URL on page load
+  useEffect(() => {
+    const cardTypesParam = searchParams.get('cardTypes')
+    if (cardTypesParam) {
+      const cardTypesFromUrl = cardTypesParam.split(',').filter(type => 
+        ALL_CARD_TYPES.includes(type as any)
+      )
+      if (cardTypesFromUrl.length > 0) {
+        console.log('Restoring card types from URL:', cardTypesFromUrl)
+        setActiveCardTypes(cardTypesFromUrl)
+      }
+    }
+  }, [searchParams])
+
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString())
+    
+    if (activeCardTypes.length > 0) {
+      params.set('cardTypes', activeCardTypes.join(','))
+    } else {
+      params.delete('cardTypes')
+    }
+    
+    const newUrl = `/map${params.toString() ? `?${params.toString()}` : ''}`
+    
+    // Only update URL if it's different from current
+    if (newUrl !== window.location.pathname + window.location.search) {
+      console.log('Updating URL with filters:', newUrl)
+      router.replace(newUrl)
+    }
+  }, [activeCardTypes, router, searchParams])
 
   const handleMarkerClick = (merchant: Merchant) => {
     setSelectedMerchant(merchant)
@@ -61,6 +99,31 @@ export default function MapPage() {
               
               {/* 카드 타입 필터 */}
               <div className="flex gap-2 items-center">
+                {/* 활성 필터 수 뱃지 */}
+                <div className="flex items-center gap-1 mr-2 pr-2 border-r border-gray-300">
+                  <span 
+                    className="bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-medium"
+                    data-testid="active-filter-count"
+                  >
+                    {activeCardTypes.length}
+                  </span>
+                  {activeCardTypes.length > 0 && (
+                    <span 
+                      className="text-sm text-gray-600"
+                      data-testid="filter-summary"
+                    >
+                      {activeCardTypes.map(type => {
+                        switch (type) {
+                          case 'CHILD_MEAL': return '아동급식카드'
+                          case 'CULTURE_NURI': return '문화누리카드'
+                          case 'LOCAL_CURRENCY': return '지역사랑상품권'
+                          default: return type
+                        }
+                      }).join(', ')} 적용됨
+                    </span>
+                  )}
+                </div>
+                
                 {/* 전체 선택/해제 버튼 */}
                 <div className="flex gap-1 mr-2 pr-2 border-r border-gray-300">
                   <button

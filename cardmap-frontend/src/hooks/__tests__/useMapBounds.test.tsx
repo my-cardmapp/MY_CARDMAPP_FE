@@ -68,7 +68,7 @@ describe('useMapBounds', () => {
   )
 
   it('should initialize with null bounds when no map is provided', () => {
-    const { result } = renderHook(() => useMapBounds(), { wrapper })
+    const { result } = renderHook(() => useMapBounds({ map: null }), { wrapper })
 
     expect(result.current.bounds).toBeNull()
     expect(result.current.isLoading).toBe(false)
@@ -85,7 +85,7 @@ describe('useMapBounds', () => {
           isScriptError: false,
         }
         React.useContext = vi.fn(() => mapContext)
-        return useMapBounds()
+        return useMapBounds({ map: mockMap as any })
       },
       { wrapper }
     )
@@ -112,7 +112,7 @@ describe('useMapBounds', () => {
           isScriptError: false,
         }
         React.useContext = vi.fn(() => mapContext)
-        return useMapBounds({ onBoundsChange })
+        return useMapBounds({ map: mockMap as any, onBoundsChange })
       },
       { wrapper }
     )
@@ -137,7 +137,7 @@ describe('useMapBounds', () => {
           isScriptError: false,
         }
         React.useContext = vi.fn(() => mapContext)
-        return useMapBounds()
+        return useMapBounds({ map: mockMap as any })
       },
       { wrapper }
     )
@@ -169,7 +169,7 @@ describe('useMapBounds', () => {
           isScriptError: false,
         }
         React.useContext = vi.fn(() => mapContext)
-        return useMapBounds()
+        return useMapBounds({ map: mockMap as any })
       },
       { wrapper }
     )
@@ -190,7 +190,7 @@ describe('useMapBounds', () => {
           isScriptError: false,
         }
         React.useContext = vi.fn(() => mapContext)
-        return useMapBounds()
+        return useMapBounds({ map: mockMap as any })
       },
       { wrapper }
     )
@@ -219,7 +219,7 @@ describe('useMapBounds', () => {
           isScriptError: false,
         }
         React.useContext = vi.fn(() => mapContext)
-        return useMapBounds()
+        return useMapBounds({ map: mockMap as any })
       },
       { wrapper }
     )
@@ -246,7 +246,7 @@ describe('useMapBounds', () => {
           isScriptError: false,
         }
         React.useContext = vi.fn(() => mapContext)
-        return useMapBounds()
+        return useMapBounds({ map: mockMap as any })
       },
       { wrapper }
     )

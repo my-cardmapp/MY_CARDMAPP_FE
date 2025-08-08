@@ -1,0 +1,32 @@
+{
+  "testMerchants": [
+    {
+      "id": 1,
+      "name": "테스트 편의점",
+      "address": "서울특별시 강남구 테스트로 123",
+      "location": {
+        "lat": 37.4979,
+        "lng": 127.0276
+      },
+      "cards": ["CHILD_MEAL"],
+      "category": {
+        "code": "CONVENIENCE",
+        "name": "편의점"
+      }
+    },
+    {
+      "id": 2,
+      "name": "테스트 음식점",
+      "address": "서울특별시 서초구 샘플로 456",
+      "location": {
+        "lat": 37.4837,
+        "lng": 127.0324
+      },
+      "cards": ["CHILD_MEAL", "CULTURE_NURI"],
+      "category": {
+        "code": "RESTAURANT",
+        "name": "음식점"
+      }
+    }
+  ]
+}

@@ -16,7 +16,7 @@ interface MapContainerProps {
   onMapReady?: (map: naver.maps.Map) => void
 }
 
-const MapContainer: React.FC<MapContainerProps> = ({
+const MapContainer: React.FC<MapContainerProps> = React.memo(({
   center = { lat: 37.5666805, lng: 126.9784147 },
   zoom = 15,
   className = '',
@@ -36,7 +36,11 @@ const MapContainer: React.FC<MapContainerProps> = ({
 
   // Initialize map
   useEffect(() => {
-    if (!isScriptLoaded || !mapRef.current || map) return
+    if (!isScriptLoaded || !mapRef.current) return
+
+    // Get current map instance and check if already initialized
+    const currentMap = map
+    if (currentMap) return
 
     console.log('MapContainer - Creating map...')
     const newMap = new naver.maps.Map(mapRef.current, {
@@ -52,36 +56,42 @@ const MapContainer: React.FC<MapContainerProps> = ({
       mapDataControl: false,
     })
     
-    setMap(newMap)
+    // Store event listener references for cleanup
+    const eventListeners = new Set<any>()
     
     // Map event listeners
-    if (newMap) {
-      // Click event
+    eventListeners.add(
       naver.maps.Event.addListener(newMap, 'click', (e: any) => {
         console.log('Map clicked at:', e.coord)
       })
-      
-      // Drag events
+    )
+    
+    eventListeners.add(
       naver.maps.Event.addListener(newMap, 'dragstart', () => {
         setIsDragging(true)
       })
-      
+    )
+    
+    eventListeners.add(
       naver.maps.Event.addListener(newMap, 'dragend', () => {
         setIsDragging(false)
       })
-      
-      // Zoom event
+    )
+    
+    eventListeners.add(
       naver.maps.Event.addListener(newMap, 'zoom_changed', () => {
-        console.log('Zoom changed to:', newMap.getZoom())
+        console.log('Zoom changed:', newMap.getZoom())
       })
-      
-      // Bounds changed with debouncing
-      let boundsTimeout: NodeJS.Timeout
+    )
+    
+    // Bounds changed with proper debouncing
+    let boundsTimeout: NodeJS.Timeout | null = null
+    eventListeners.add(
       naver.maps.Event.addListener(newMap, 'bounds_changed', () => {
-        clearTimeout(boundsTimeout)
+        if (boundsTimeout) clearTimeout(boundsTimeout)
         boundsTimeout = setTimeout(() => {
           const bounds = (newMap as any).getBounds()
-          if (bounds) {
+          if (bounds && newMap === map) { // Check if map is still current
             const boundsData = {
               north: bounds.getNE().lat(),
               south: bounds.getSW().lat(),
@@ -105,48 +115,70 @@ const MapContainer: React.FC<MapContainerProps> = ({
           }
         }, 500)
       })
-      
-      // Restore viewport from sessionStorage
-      const savedViewport = sessionStorage.getItem('mapViewport')
-      if (savedViewport) {
-        try {
-          const { center: savedCenter, zoom: savedZoom } = JSON.parse(savedViewport)
-          newMap.setCenter(new naver.maps.LatLng(savedCenter.lat, savedCenter.lng))
-          newMap.setZoom(savedZoom)
-        } catch (error) {
-          console.error('Failed to restore viewport:', error)
-        }
+    )
+    
+    // Restore viewport from sessionStorage
+    const savedViewport = sessionStorage.getItem('mapViewport')
+    if (savedViewport) {
+      try {
+        const { center: savedCenter, zoom: savedZoom } = JSON.parse(savedViewport)
+        newMap.setCenter(new naver.maps.LatLng(savedCenter.lat, savedCenter.lng))
+        newMap.setZoom(savedZoom)
+      } catch (error) {
+        console.error('Failed to restore viewport:', error)
       }
-      
-      // Call onMapReady callback
-      onMapReady?.(newMap)
     }
+    
+    // Set map in context after all setup is complete
+    setMap(newMap)
+    
+    // Call onMapReady callback
+    onMapReady?.(newMap)
 
     return () => {
+      // Cleanup event listeners
+      eventListeners.forEach(listener => {
+        naver.maps.Event.removeListener(listener)
+      })
+      eventListeners.clear()
+      
+      if (boundsTimeout) {
+        clearTimeout(boundsTimeout)
+      }
+      
       if (newMap) {
         newMap.destroy()
-        setMap(null)
       }
     }
-  }, [isScriptLoaded, center.lat, center.lng, zoom, setMap, onMapReady])
+  }, [isScriptLoaded]) // Remove dependencies that cause re-initialization
 
-  // Add markers for merchants
+  // Add markers for merchants - memoized for performance
   useEffect(() => {
     console.log('MapContainer - Merchants:', merchants.length, 'Map:', !!map, 'Active filters:', activeCardTypes)
-    if (!map || !merchants.length) return
+    if (!map || !merchants.length) {
+      // Clear markers if no map or merchants
+      markersRef.current.forEach(marker => marker.setMap(null))
+      markersRef.current = []
+      return
+    }
 
     // Clear existing markers
     markersRef.current.forEach(marker => marker.setMap(null))
     markersRef.current = []
 
     // Filter merchants based on active card types
+    // If no card types are selected, show all merchants
     const filteredMerchants = activeCardTypes.length > 0
       ? merchants.filter(merchant => 
           merchant.cards.some(card => activeCardTypes.includes(card.code))
         )
-      : []
+      : merchants
 
     console.log('Adding markers for', filteredMerchants.length, 'merchants (filtered from', merchants.length, ')')
+    
+    // Create stable event handlers
+    const markerClickHandlers = new Map<number, () => void>()
+    
     // Add new markers
     filteredMerchants.forEach(merchant => {
       const marker = new naver.maps.Marker({
@@ -155,7 +187,12 @@ const MapContainer: React.FC<MapContainerProps> = ({
         title: merchant.name,
         icon: {
           content: `
-            <div style="
+            <div class="merchant-marker" 
+                 role="button"
+                 aria-label="가맹점: ${merchant.name}"
+                 data-merchant-id="${merchant.id}"
+                 data-testid="merchant-marker"
+                 style="
               background-color: ${merchant.cards[0]?.colorHex || '#FF0000'}; 
               width: 32px; 
               height: 32px; 
@@ -168,6 +205,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
               font-weight: bold;
               color: white;
               font-size: 14px;
+              cursor: pointer;
             ">
               ${merchant.cards[0]?.name.charAt(0) || '가'}
             </div>
@@ -177,15 +215,26 @@ const MapContainer: React.FC<MapContainerProps> = ({
         }
       })
 
-      // Add click event
-      const listener = naver.maps.Event.addListener(marker, 'click', () => {
+      // Create stable click handler
+      const clickHandler = markerClickHandlers.get(merchant.id) || (() => {
         console.log('Marker clicked:', merchant.name)
         onMarkerClick?.(merchant)
       })
+      markerClickHandlers.set(merchant.id, clickHandler)
+
+      // Add click event
+      const listener = naver.maps.Event.addListener(marker, 'click', clickHandler)
       console.log('Click listener added for:', merchant.name, 'listener:', listener)
 
       markersRef.current.push(marker)
     })
+
+    // Cleanup function for markers
+    return () => {
+      markersRef.current.forEach(marker => marker.setMap(null))
+      markersRef.current = []
+      markerClickHandlers.clear()
+    }
   }, [map, merchants, activeCardTypes, onMarkerClick])
 
   if (!isScriptLoaded && !isScriptError) {
@@ -264,6 +313,8 @@ const MapContainer: React.FC<MapContainerProps> = ({
       )}
     </div>
   )
-}
+})
+
+MapContainer.displayName = 'MapContainer'
 
 export default MapContainer

@@ -70,18 +70,18 @@ describe('MapControls', () => {
     expect(screen.getByTitle('전체 화면')).toBeInTheDocument()
   })
 
-  it('adds native controls to the map', () => {
+  it('does not add native controls to the map (handled by MapOptions)', () => {
     render(<MapControls map={mockMap as any} />)
 
-    expect(naver.maps.ZoomControl).toHaveBeenCalledWith({
-      position: 1, // TOP_LEFT
-      style: 1, // SMALL
-      legendDisabled: true,
-    })
-
-    expect(mockMapControls[1].push).toHaveBeenCalledWith(mockZoomControl)
-    expect(mockMapControls[12].push).toHaveBeenCalledWith(mockScaleControl)
-    expect(mockMapControls[10].push).toHaveBeenCalledWith(mockLogoControl)
+    // Native controls are set in MapOptions, not in MapControls
+    expect(naver.maps.ZoomControl).not.toHaveBeenCalled()
+    expect(naver.maps.ScaleControl).not.toHaveBeenCalled()
+    expect(naver.maps.LogoControl).not.toHaveBeenCalled()
+    
+    // No controls should be pushed to the map
+    expect(mockMapControls[1].push).not.toHaveBeenCalled()
+    expect(mockMapControls[12].push).not.toHaveBeenCalled()
+    expect(mockMapControls[10].push).not.toHaveBeenCalled()
   })
 
   it('handles location permission success', async () => {
@@ -194,13 +194,14 @@ describe('MapControls', () => {
     })
   })
 
-  it('clears controls on unmount', () => {
+  it('unmounts cleanly without clearing controls (no controls added)', () => {
     const { unmount } = render(<MapControls map={mockMap as any} />)
 
     unmount()
 
-    expect(mockMapControls[1].clear).toHaveBeenCalled()
-    expect(mockMapControls[12].clear).toHaveBeenCalled()
-    expect(mockMapControls[10].clear).toHaveBeenCalled()
+    // Since MapControls doesn't add native controls, nothing should be cleared
+    expect(mockMapControls[1].clear).not.toHaveBeenCalled()
+    expect(mockMapControls[12].clear).not.toHaveBeenCalled()
+    expect(mockMapControls[10].clear).not.toHaveBeenCalled()
   })
 })

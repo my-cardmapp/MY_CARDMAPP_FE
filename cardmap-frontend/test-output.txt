@@ -1,0 +1,7 @@
+
+> cardmap-frontend@0.1.0 test
+> vitest 2
+
+
+ RUN  v3.2.4 /mnt/c/Users/ancho/My_CARDMAPP/cardmap-frontend
+

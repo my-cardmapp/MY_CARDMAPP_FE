@@ -18,11 +18,12 @@ vi.mock('@/hooks/useNaverMapScript', () => ({
 
 // Test component that uses the map context
 const TestComponent = () => {
-  const { map, isMapReady } = useMapContext()
+  const { map, isMapReady, getMap } = useMapContext()
   return (
     <div>
       <div data-testid="map-ready">{isMapReady ? 'ready' : 'not-ready'}</div>
       <div data-testid="map-instance">{map ? 'map-exists' : 'no-map'}</div>
+      <div data-testid="get-map">{getMap() ? 'getMap-exists' : 'getMap-no-map'}</div>
     </div>
   )
 }
@@ -37,6 +38,7 @@ describe('MapContext', () => {
     
     expect(screen.getByTestId('map-ready')).toHaveTextContent('not-ready')
     expect(screen.getByTestId('map-instance')).toHaveTextContent('no-map')
+    expect(screen.getByTestId('get-map')).toHaveTextContent('getMap-no-map')
   })
 
   it('should throw error when useMapContext is used outside provider', () => {

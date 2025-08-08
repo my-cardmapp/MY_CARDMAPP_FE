@@ -52,6 +52,7 @@ beforeEach(() => {
         addListener: vi.fn(),
         removeListener: vi.fn(),
       },
+      Size: vi.fn((width, height) => ({ width, height })),
     },
   }
 })
@@ -102,8 +103,9 @@ describe('MarkerManager', () => {
     expect(window.naver.maps.Marker).toHaveBeenCalledWith(
       expect.objectContaining({
         icon: expect.objectContaining({
-          path: expect.any(String),
-          fillColor: CARD_STYLES.CHILD_MEAL.color,
+          content: expect.stringContaining(CARD_STYLES.CHILD_MEAL.color),
+          size: expect.any(Object),
+          anchor: expect.any(Object),
         }),
       })
     )
@@ -126,7 +128,7 @@ describe('MarkerManager', () => {
     expect(window.naver.maps.Marker).toHaveBeenCalledWith(
       expect.objectContaining({
         icon: expect.objectContaining({
-          fillColor: CARD_STYLES.CHILD_MEAL.color,
+          content: expect.stringContaining(CARD_STYLES.CHILD_MEAL.color),
         }),
       })
     )

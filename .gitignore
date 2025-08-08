@@ -83,7 +83,19 @@ coverage/
 *.lcov
 .nyc_output/
 
+# Playwright specific
+cardmap-frontend/playwright-report/
+cardmap-frontend/playwright/.cache/
+cardmap-frontend/test-results/
+cardmap-frontend/e2e/screenshots/
+cardmap-frontend/e2e/videos/
+cardmap-frontend/e2e/traces/
+cardmap-frontend/.playwright/
+
 # Temporary files
 .tmp/
 temp/
 *.tmp 
+
+# context engineering files
+*.md
