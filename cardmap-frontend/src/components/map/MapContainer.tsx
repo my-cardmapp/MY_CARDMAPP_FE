@@ -1,10 +1,12 @@
 'use client'
 
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { useMapContext } from '@/contexts/MapContext'
 import { MapSkeleton } from './MapSkeleton'
 import MapControls from './MapControls'
 import { ViewportMarkerRenderer } from '@/services/ViewportMarkerRenderer'
+import { useDebounce, useDebouncedCallback } from '@/hooks/useDebounce'
+import { useThrottle, useThrottledCallback } from '@/hooks/useThrottle'
 import type { Merchant } from '@/types'
 
 interface MapContainerProps {
@@ -41,7 +43,14 @@ const MapContainer: React.FC<MapContainerProps> = React.memo(({
   const [isDragging, setIsDragging] = useState(false)
   const [currentBounds, setCurrentBounds] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [currentZoom, setCurrentZoom] = useState(zoom)
   const viewportRendererRef = useRef<ViewportMarkerRenderer | null>(null)
+  
+  // Debounced bounds for API calls (300ms delay)
+  const debouncedBounds = useDebounce(currentBounds, 300)
+  
+  // Throttled zoom for performance (using requestAnimationFrame)
+  const throttledZoom = useThrottle(currentZoom, 100, true)
 
   // Initialize map
   useEffect(() => {
@@ -89,40 +98,34 @@ const MapContainer: React.FC<MapContainerProps> = React.memo(({
     
     eventListeners.add(
       naver.maps.Event.addListener(newMap, 'zoom_changed', () => {
-        console.log('Zoom changed:', newMap.getZoom())
+        const newZoom = newMap.getZoom()
+        console.log('Zoom changed:', newZoom)
+        setCurrentZoom(newZoom)
       })
     )
     
-    // Bounds changed with proper debouncing
-    let boundsTimeout: NodeJS.Timeout | null = null
+    // Bounds changed - immediately update state, let hooks handle debouncing
     eventListeners.add(
       naver.maps.Event.addListener(newMap, 'bounds_changed', () => {
-        if (boundsTimeout) clearTimeout(boundsTimeout)
-        boundsTimeout = setTimeout(() => {
-          const bounds = (newMap as any).getBounds()
-          if (bounds && newMap === map) { // Check if map is still current
-            const boundsData = {
-              north: bounds.getNE().lat(),
-              south: bounds.getSW().lat(),
-              east: bounds.getNE().lng(),
-              west: bounds.getSW().lng(),
-            }
-            console.log('Bounds changed:', boundsData)
-            setCurrentBounds(boundsData)
-            
-            // Save viewport to sessionStorage
-            const center = newMap.getCenter()
-            const zoom = newMap.getZoom()
-            sessionStorage.setItem('mapViewport', JSON.stringify({
-              center: { lat: center.lat(), lng: center.lng() },
-              zoom
-            }))
-            
-            // Simulate loading for demonstration
-            setIsLoading(true)
-            setTimeout(() => setIsLoading(false), 300)
+        const bounds = (newMap as any).getBounds()
+        if (bounds) {
+          const boundsData = {
+            north: bounds.getNE().lat(),
+            south: bounds.getSW().lat(),
+            east: bounds.getNE().lng(),
+            west: bounds.getSW().lng(),
           }
-        }, 500)
+          console.log('Bounds changed:', boundsData)
+          setCurrentBounds(boundsData)
+          
+          // Save viewport to sessionStorage (also debounced separately)
+          const center = newMap.getCenter()
+          const zoom = newMap.getZoom()
+          sessionStorage.setItem('mapViewport', JSON.stringify({
+            center: { lat: center.lat(), lng: center.lng() },
+            zoom
+          }))
+        }
       })
     )
     
@@ -165,15 +168,22 @@ const MapContainer: React.FC<MapContainerProps> = React.memo(({
       })
       eventListeners.clear()
       
-      if (boundsTimeout) {
-        clearTimeout(boundsTimeout)
-      }
-      
       if (newMap) {
         newMap.destroy()
       }
     }
   }, [isScriptLoaded, enableClustering]) // Remove dependencies that cause re-initialization
+
+  // Handle loading state based on debounced bounds
+  useEffect(() => {
+    if (debouncedBounds) {
+      // Simulate loading for demonstration
+      setIsLoading(true)
+      const timer = setTimeout(() => setIsLoading(false), 300)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [debouncedBounds])
 
   // Update merchants in ViewportMarkerRenderer
   useEffect(() => {
