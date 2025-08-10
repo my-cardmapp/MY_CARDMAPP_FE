@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { debounce } from '@/utils/debounce'
 
 export interface MapBounds {
@@ -134,7 +134,7 @@ export function useMapBounds(options: UseMapBoundsOptions) {
     }
   }, [map, debounceDelay]) // onBoundsChange는 ref에 저장하여 안정성 보장
 
-  // 확장된 bounds 계산 (viewport 외곽 영역 포함)
+  // 확장된 bounds 계산 (viewport 외곽 영역 포함) - memoized
   const getExtendedBounds = useCallback((extensionRatio: number = 0.2): MapBounds | null => {
     if (!bounds) return null
 
@@ -149,7 +149,7 @@ export function useMapBounds(options: UseMapBoundsOptions) {
     }
   }, [bounds])
 
-  // bounds 내에 좌표가 있는지 확인
+  // bounds 내에 좌표가 있는지 확인 - memoized
   const isInBounds = useCallback((lat: number, lng: number, usedBounds?: MapBounds): boolean => {
     const checkBounds = usedBounds || bounds
     if (!checkBounds) return false
@@ -162,10 +162,11 @@ export function useMapBounds(options: UseMapBoundsOptions) {
     )
   }, [bounds])
 
-  return {
+  // Return value memoized to prevent unnecessary re-renders
+  return useMemo(() => ({
     bounds,
     isLoading,
     getExtendedBounds,
     isInBounds,
-  }
+  }), [bounds, isLoading, getExtendedBounds, isInBounds])
 }

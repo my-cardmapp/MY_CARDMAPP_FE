@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback, memo } from 'react'
 
 interface MapControlsProps {
   map: naver.maps.Map
 }
 
-export default function MapControls({ map }: MapControlsProps) {
+const MapControls = memo(({ map }: MapControlsProps) => {
   const [isLocating, setIsLocating] = useState(false)
   const [locationError, setLocationError] = useState<string | null>(null)
 
@@ -21,8 +21,8 @@ export default function MapControls({ map }: MapControlsProps) {
     }
   }, [map])
 
-  // 현재 위치로 이동
-  const handleLocationClick = async () => {
+  // 현재 위치로 이동 - useCallback으로 메모이제이션
+  const handleLocationClick = useCallback(async () => {
     if (!navigator.geolocation) {
       setLocationError('브라우저가 위치 서비스를 지원하지 않습니다.')
       return
@@ -84,10 +84,10 @@ export default function MapControls({ map }: MapControlsProps) {
         maximumAge: 0
       }
     )
-  }
+  }, [map])
 
-  // 전체 화면 토글
-  const handleFullscreenClick = () => {
+  // 전체 화면 토글 - useCallback으로 메모이제이션
+  const handleFullscreenClick = useCallback(() => {
     const mapElement = map.getElement()
     
     if (!document.fullscreenElement) {
@@ -97,7 +97,7 @@ export default function MapControls({ map }: MapControlsProps) {
     } else {
       document.exitFullscreen()
     }
-  }
+  }, [map])
 
   return (
     <>
@@ -155,4 +155,8 @@ export default function MapControls({ map }: MapControlsProps) {
       )}
     </>
   )
-}
+})
+
+MapControls.displayName = 'MapControls'
+
+export default MapControls

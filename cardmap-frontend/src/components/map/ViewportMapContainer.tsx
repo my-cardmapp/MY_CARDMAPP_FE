@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useRef, useState, useCallback } from 'react'
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useMapContext } from '@/contexts/MapContext'
 import { MapSkeleton } from './MapSkeleton'
 import MapControls from './MapControls'
@@ -17,6 +17,47 @@ interface ViewportMapContainerProps {
   onMarkerClick?: (merchant: Merchant) => void
   onMapReady?: (map: naver.maps.Map) => void
 }
+
+// Memoized performance info component
+const PerformanceInfo = React.memo(({ 
+  markerRenderer,
+  performanceMetrics 
+}: { 
+  markerRenderer: ViewportMarkerRenderer | null,
+  performanceMetrics: any 
+}) => {
+  if (!performanceMetrics || process.env.NODE_ENV !== 'development') return null
+  
+  return (
+    <div className="absolute bottom-4 right-4 bg-white p-3 rounded shadow-lg text-xs max-w-xs">
+      <div className="font-bold mb-1">Viewport Renderer Performance</div>
+      <div>Total Markers: {markerRenderer?.getTotalMarkerCount()}</div>
+      <div>Visible: {markerRenderer?.getVisibleMarkerCount()}</div>
+      <div>Pool Size: {performanceMetrics.poolSize}</div>
+      <div>In Use: {performanceMetrics.inUseCount}</div>
+      <div>Last Update: {performanceMetrics.lastUpdateTime.toFixed(2)}ms</div>
+    </div>
+  )
+})
+
+PerformanceInfo.displayName = 'PerformanceInfo'
+
+// Memoized bounds display component
+const BoundsDisplay = React.memo(({ bounds }: { bounds: any }) => {
+  if (!bounds || process.env.NODE_ENV !== 'development') return null
+  
+  return (
+    <div className="absolute bottom-4 left-4 bg-white p-3 rounded shadow-lg text-xs max-w-xs">
+      <div className="font-bold mb-1">Current Viewport</div>
+      <div>North: {bounds.north.toFixed(6)}</div>
+      <div>South: {bounds.south.toFixed(6)}</div>
+      <div>East: {bounds.east.toFixed(6)}</div>
+      <div>West: {bounds.west.toFixed(6)}</div>
+    </div>
+  )
+})
+
+BoundsDisplay.displayName = 'BoundsDisplay'
 
 const ViewportMapContainer: React.FC<ViewportMapContainerProps> = React.memo(({
   center = { lat: 37.5666805, lng: 126.9784147 },
@@ -153,20 +194,20 @@ const ViewportMapContainer: React.FC<ViewportMapContainerProps> = React.memo(({
     }
   }, [activeCardTypes])
 
-  // Handle marker click events
-  useEffect(() => {
-    const handleMarkerClick = (event: CustomEvent) => {
-      const { merchant } = event.detail
-      console.log('Viewport marker clicked:', merchant.name)
-      onMarkerClick?.(merchant)
-    }
+  // Handle marker click events - memoized callback
+  const handleMarkerClickEvent = useCallback((event: CustomEvent) => {
+    const { merchant } = event.detail
+    console.log('Viewport marker clicked:', merchant.name)
+    onMarkerClick?.(merchant)
+  }, [onMarkerClick])
 
-    window.addEventListener('markerClick', handleMarkerClick as EventListener)
+  useEffect(() => {
+    window.addEventListener('markerClick', handleMarkerClickEvent as EventListener)
     
     return () => {
-      window.removeEventListener('markerClick', handleMarkerClick as EventListener)
+      window.removeEventListener('markerClick', handleMarkerClickEvent as EventListener)
     }
-  }, [onMarkerClick])
+  }, [handleMarkerClickEvent])
 
   if (!isScriptLoaded && !isScriptError) {
     return <MapSkeleton />
@@ -234,28 +275,14 @@ const ViewportMapContainer: React.FC<ViewportMapContainerProps> = React.memo(({
       {/* Map Controls */}
       {map && <MapControls map={map} />}
       
-      {/* Performance info (for debugging) */}
-      {performanceMetrics && process.env.NODE_ENV === 'development' && (
-        <div className="absolute bottom-4 right-4 bg-white p-3 rounded shadow-lg text-xs max-w-xs">
-          <div className="font-bold mb-1">Viewport Renderer Performance</div>
-          <div>Total Markers: {markerRendererRef.current?.getTotalMarkerCount()}</div>
-          <div>Visible: {markerRendererRef.current?.getVisibleMarkerCount()}</div>
-          <div>Pool Size: {performanceMetrics.poolSize}</div>
-          <div>In Use: {performanceMetrics.inUseCount}</div>
-          <div>Last Update: {performanceMetrics.lastUpdateTime.toFixed(2)}ms</div>
-        </div>
-      )}
+      {/* Performance info (for debugging) - using memoized component */}
+      <PerformanceInfo 
+        markerRenderer={markerRendererRef.current}
+        performanceMetrics={performanceMetrics}
+      />
       
-      {/* Bounds display (for debugging) */}
-      {bounds && process.env.NODE_ENV === 'development' && (
-        <div className="absolute bottom-4 left-4 bg-white p-3 rounded shadow-lg text-xs max-w-xs">
-          <div className="font-bold mb-1">Current Viewport</div>
-          <div>North: {bounds.north.toFixed(6)}</div>
-          <div>South: {bounds.south.toFixed(6)}</div>
-          <div>East: {bounds.east.toFixed(6)}</div>
-          <div>West: {bounds.west.toFixed(6)}</div>
-        </div>
-      )}
+      {/* Bounds display (for debugging) - using memoized component */}
+      <BoundsDisplay bounds={bounds} />
     </div>
   )
 })
