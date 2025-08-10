@@ -2,6 +2,7 @@ import type { Merchant } from '@/types'
 import type { MapBounds } from '@/hooks/useMapBounds'
 import { debounce } from '@/utils/debounce'
 import { getCardStyle } from '@/constants/cardStyles'
+import { ClusterManager, type Feature } from './ClusterManager'
 
 interface MarkerData {
   merchant: Merchant
@@ -32,7 +33,8 @@ export class ViewportMarkerRenderer {
   private bufferRatio: number = 0.2
   private eventListeners: any[] = []
   private isClusteringEnabled: boolean = false
-  private clusteringInstance: naver.maps.MarkerClustering | null = null
+  private clusterManager: ClusterManager | null = null
+  private clusterMarkers: Map<string, naver.maps.Marker> = new Map()
   
   // Performance tracking
   private lastUpdateTime: number = 0
@@ -140,7 +142,15 @@ export class ViewportMarkerRenderer {
       })
     })
 
-    // Build spatial index
+    // Update cluster manager if enabled
+    if (this.isClusteringEnabled && this.clusterManager) {
+      this.clusterManager.load(validMerchants)
+      if (this.activeFilter) {
+        this.clusterManager.setFilter(this.activeFilter)
+      }
+    }
+
+    // Build spatial index for non-clustered mode
     this.buildSpatialIndex(validMerchants)
 
     // Update viewport if we have current bounds
@@ -258,30 +268,170 @@ export class ViewportMarkerRenderer {
   private performViewportUpdate(bounds: MapBounds, bufferRatio: number): void {
     const startTime = performance.now()
     
-    const extendedBounds = this.getExtendedBounds(bounds, bufferRatio)
-    const visibleMerchants = this.getMerchantsInBounds(extendedBounds)
+    if (this.isClusteringEnabled && this.clusterManager) {
+      // Use ClusterManager for clustering
+      this.updateClusters(bounds)
+    } else {
+      // Original viewport-based rendering
+      const extendedBounds = this.getExtendedBounds(bounds, bufferRatio)
+      const visibleMerchants = this.getMerchantsInBounds(extendedBounds)
 
-    // Update marker visibility
-    this.markerData.forEach((data, merchantId) => {
-      const shouldBeVisible = visibleMerchants.some(m => m.id === merchantId) && 
-                               this.shouldShowMarker(data.merchant)
-      
-      if (shouldBeVisible && !data.isVisible) {
-        this.showMarker(data)
-      } else if (!shouldBeVisible && data.isVisible) {
-        this.hideMarker(data)
-      }
-      
-      // Update bounds tracking
-      data.isInBounds = visibleMerchants.some(m => m.id === merchantId)
-    })
-
-    // Update clustering if enabled
-    if (this.isClusteringEnabled && this.clusteringInstance) {
-      this.clusteringInstance.redraw()
+      // Update marker visibility
+      this.markerData.forEach((data, merchantId) => {
+        const shouldBeVisible = visibleMerchants.some(m => m.id === merchantId) && 
+                                 this.shouldShowMarker(data.merchant)
+        
+        if (shouldBeVisible && !data.isVisible) {
+          this.showMarker(data)
+        } else if (!shouldBeVisible && data.isVisible) {
+          this.hideMarker(data)
+        }
+        
+        // Update bounds tracking
+        data.isInBounds = visibleMerchants.some(m => m.id === merchantId)
+      })
     }
 
     this.lastUpdateTime = performance.now() - startTime
+  }
+
+  private updateClusters(bounds: MapBounds): void {
+    if (!this.clusterManager || !this.map) return
+
+    // Get current zoom level
+    const zoom = this.map.getZoom()
+
+    // Get clusters for current viewport
+    const clusters = this.clusterManager.getClusters(
+      { 
+        west: bounds.west, 
+        east: bounds.east, 
+        south: bounds.south, 
+        north: bounds.north 
+      },
+      zoom
+    )
+
+    // Track which markers should be visible
+    const visibleClusterIds = new Set<string>()
+    const visibleMerchantIds = new Set<number>()
+
+    clusters.forEach(cluster => {
+      if (cluster.properties?.cluster) {
+        // It's a cluster
+        const clusterId = `cluster-${cluster.properties.cluster_id}`
+        visibleClusterIds.add(clusterId)
+        this.showClusterMarker(cluster)
+      } else if (cluster.properties?.merchant) {
+        // It's an individual merchant
+        const merchant = cluster.properties.merchant
+        visibleMerchantIds.add(merchant.id)
+        const data = this.markerData.get(merchant.id)
+        if (data) {
+          data.isInBounds = true
+          if (!data.isVisible) {
+            this.showMarker(data)
+          }
+        }
+      }
+    })
+
+    // Hide markers that shouldn't be visible
+    this.markerData.forEach((data, merchantId) => {
+      if (!visibleMerchantIds.has(merchantId) && data.isVisible) {
+        this.hideMarker(data)
+        data.isInBounds = false
+      }
+    })
+
+    // Hide cluster markers that shouldn't be visible
+    this.clusterMarkers.forEach((marker, clusterId) => {
+      if (!visibleClusterIds.has(clusterId)) {
+        marker.setMap(null)
+        this.clusterMarkers.delete(clusterId)
+      }
+    })
+  }
+
+  private showClusterMarker(cluster: Feature): void {
+    if (!cluster.properties?.cluster || !this.map) return
+
+    const clusterId = `cluster-${cluster.properties.cluster_id}`
+    const [lng, lat] = cluster.geometry.coordinates
+    const count = cluster.properties.point_count || 0
+
+    // Get or create cluster marker
+    let marker = this.clusterMarkers.get(clusterId)
+    
+    if (!marker) {
+      // Get cluster style
+      const style = this.clusterManager!.getClusterStyle(count)
+
+      // Create new cluster marker
+      marker = new naver.maps.Marker({
+        position: new naver.maps.LatLng(lat, lng),
+        map: this.map,
+        icon: {
+          content: `
+            <div style="
+              width: ${style.size}px;
+              height: ${style.size}px;
+              background-color: ${style.backgroundColor};
+              border: 2px solid ${style.borderColor};
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: ${style.textColor};
+              font-size: ${style.fontSize}px;
+              font-weight: bold;
+              cursor: pointer;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+              transition: transform 0.2s;
+            " 
+            onmouseover="this.style.transform='scale(1.1)'"
+            onmouseout="this.style.transform='scale(1)'"
+            aria-label="Cluster with ${count} merchants">
+              ${cluster.properties.point_count_abbreviated || count}
+            </div>
+          `,
+          size: new naver.maps.Size(style.size, style.size),
+          anchor: new naver.maps.Point(style.size / 2, style.size / 2)
+        } as naver.maps.HtmlIcon,
+        zIndex: 100 + count, // Higher z-index for larger clusters
+        clickable: true
+      })
+
+      // Add click handler for cluster expansion
+      naver.maps.Event.addListener(marker, 'click', () => {
+        this.handleClusterClick(cluster)
+      })
+
+      this.clusterMarkers.set(clusterId, marker)
+    } else {
+      // Update position if needed
+      marker.setPosition(new naver.maps.LatLng(lat, lng))
+      marker.setMap(this.map)
+    }
+  }
+
+  private handleClusterClick(cluster: Feature): void {
+    if (!cluster.properties?.cluster_id || !this.clusterManager || !this.map) return
+
+    // Get expansion zoom level
+    const expansionZoom = this.clusterManager.getClusterExpansionZoom(
+      cluster.properties.cluster_id
+    )
+
+    // Get cluster center
+    const [lng, lat] = cluster.geometry.coordinates
+
+    // Zoom to expand cluster
+    this.map.morph(
+      new naver.maps.LatLng(lat, lng),
+      expansionZoom,
+      { duration: 300, easing: 'easeOutCubic' }
+    )
   }
 
   private showMarker(data: MarkerData): void {
@@ -291,6 +441,17 @@ export class ViewportMarkerRenderer {
       // Get or create marker
       if (!data.marker) {
         data.marker = this.getMarkerFromPool(data.merchant)
+        
+        // Add click handler
+        if (data.marker) {
+          naver.maps.Event.addListener(data.marker, 'click', () => {
+            // Emit custom event for marker click
+            const event = new CustomEvent('markerClick', {
+              detail: { merchant: data.merchant }
+            })
+            window.dispatchEvent(event)
+          })
+        }
       }
 
       if (data.marker && this.map) {
@@ -455,6 +616,11 @@ export class ViewportMarkerRenderer {
   filterByCardType(cardTypes: string[]): void {
     this.activeFilter = cardTypes
     
+    // Update cluster manager filter if enabled
+    if (this.isClusteringEnabled && this.clusterManager) {
+      this.clusterManager.setFilter(cardTypes)
+    }
+    
     // Update visibility for all current markers
     if (this.currentBounds) {
       this.updateViewport(this.currentBounds, this.bufferRatio)
@@ -464,39 +630,60 @@ export class ViewportMarkerRenderer {
   clearFilter(): void {
     this.activeFilter = null
     
+    // Clear cluster manager filter if enabled
+    if (this.isClusteringEnabled && this.clusterManager) {
+      this.clusterManager.clearFilter()
+    }
+    
     if (this.currentBounds) {
       this.updateViewport(this.currentBounds, this.bufferRatio)
     }
   }
 
-  enableClustering(options?: Partial<naver.maps.MarkerClusteringOptions>): void {
+  enableClustering(options?: { radius?: number; maxZoom?: number; minPoints?: number }): void {
     if (this.isClusteringEnabled || !this.map) return
 
     try {
-      const visibleMarkers = Array.from(this.markerPool.inUse.values())
-      
-      this.clusteringInstance = new naver.maps.MarkerClustering({
-        minClusterSize: 2,
-        maxZoom: 15,
-        map: this.map,
-        markers: visibleMarkers,
-        disableClickZoom: false,
-        gridSize: 80,
-        ...options,
+      // Initialize ClusterManager with options
+      this.clusterManager = new ClusterManager({
+        radius: options?.radius ?? 40,
+        maxZoom: options?.maxZoom ?? 16,
+        minPoints: options?.minPoints ?? 2
       })
 
+      // Load current merchants into cluster manager
+      const merchants = Array.from(this.markerData.values()).map(data => data.merchant)
+      this.clusterManager.load(merchants)
+
+      // Apply current filter if any
+      if (this.activeFilter) {
+        this.clusterManager.setFilter(this.activeFilter)
+      }
+
       this.isClusteringEnabled = true
+
+      // Update viewport to show clusters
+      if (this.currentBounds) {
+        this.updateViewport(this.currentBounds, this.bufferRatio)
+      }
     } catch (error) {
       console.error('Error enabling clustering:', error)
     }
   }
 
   disableClustering(): void {
-    if (!this.isClusteringEnabled || !this.clusteringInstance) return
+    if (!this.isClusteringEnabled || !this.clusterManager) return
 
     try {
-      this.clusteringInstance.setMap(null)
-      this.clusteringInstance = null
+      // Clear cluster markers
+      this.clusterMarkers.forEach(marker => {
+        marker.setMap(null)
+      })
+      this.clusterMarkers.clear()
+
+      // Destroy cluster manager
+      this.clusterManager.destroy()
+      this.clusterManager = null
       this.isClusteringEnabled = false
 
       // Show individual markers
@@ -558,6 +745,16 @@ export class ViewportMarkerRenderer {
 
     // Disable clustering
     this.disableClustering()
+
+    // Clear cluster markers
+    this.clusterMarkers.forEach(marker => {
+      try {
+        marker.setMap(null)
+      } catch (error) {
+        console.warn('Error cleaning up cluster marker:', error)
+      }
+    })
+    this.clusterMarkers.clear()
 
     // Clear marker pool
     const allMarkers = this.markerPool.available.concat(Array.from(this.markerPool.inUse.values()))

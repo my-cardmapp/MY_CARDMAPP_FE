@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useMapContext } from '@/contexts/MapContext'
 import { MapSkeleton } from './MapSkeleton'
 import MapControls from './MapControls'
+import { ViewportMarkerRenderer } from '@/services/ViewportMarkerRenderer'
 import type { Merchant } from '@/types'
 
 interface MapContainerProps {
@@ -14,6 +15,12 @@ interface MapContainerProps {
   activeCardTypes?: string[]
   onMarkerClick?: (merchant: Merchant) => void
   onMapReady?: (map: naver.maps.Map) => void
+  enableClustering?: boolean
+  clusterOptions?: {
+    radius?: number
+    maxZoom?: number
+    minPoints?: number
+  }
 }
 
 const MapContainer: React.FC<MapContainerProps> = React.memo(({
@@ -24,6 +31,8 @@ const MapContainer: React.FC<MapContainerProps> = React.memo(({
   activeCardTypes = [],
   onMarkerClick,
   onMapReady,
+  enableClustering = true,
+  clusterOptions = {},
 }) => {
   console.log('MapContainer rendered with merchants:', merchants.length)
   
@@ -32,7 +41,7 @@ const MapContainer: React.FC<MapContainerProps> = React.memo(({
   const [isDragging, setIsDragging] = useState(false)
   const [currentBounds, setCurrentBounds] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const markersRef = useRef<naver.maps.Marker[]>([])
+  const viewportRendererRef = useRef<ViewportMarkerRenderer | null>(null)
 
   // Initialize map
   useEffect(() => {
@@ -129,6 +138,14 @@ const MapContainer: React.FC<MapContainerProps> = React.memo(({
       }
     }
     
+    // Initialize ViewportMarkerRenderer
+    viewportRendererRef.current = new ViewportMarkerRenderer(newMap)
+    
+    // Enable clustering if requested
+    if (enableClustering) {
+      viewportRendererRef.current.enableClustering(clusterOptions)
+    }
+    
     // Set map in context after all setup is complete
     setMap(newMap)
     
@@ -136,6 +153,12 @@ const MapContainer: React.FC<MapContainerProps> = React.memo(({
     onMapReady?.(newMap)
 
     return () => {
+      // Cleanup ViewportMarkerRenderer
+      if (viewportRendererRef.current) {
+        viewportRendererRef.current.destroy()
+        viewportRendererRef.current = null
+      }
+      
       // Cleanup event listeners
       eventListeners.forEach(listener => {
         naver.maps.Event.removeListener(listener)
@@ -150,92 +173,42 @@ const MapContainer: React.FC<MapContainerProps> = React.memo(({
         newMap.destroy()
       }
     }
-  }, [isScriptLoaded]) // Remove dependencies that cause re-initialization
+  }, [isScriptLoaded, enableClustering]) // Remove dependencies that cause re-initialization
 
-  // Add markers for merchants - memoized for performance
+  // Update merchants in ViewportMarkerRenderer
   useEffect(() => {
-    console.log('MapContainer - Merchants:', merchants.length, 'Map:', !!map, 'Active filters:', activeCardTypes)
-    if (!map || !merchants.length) {
-      // Clear markers if no map or merchants
-      markersRef.current.forEach(marker => marker.setMap(null))
-      markersRef.current = []
-      return
+    console.log('MapContainer - Merchants:', merchants.length, 'Renderer:', !!viewportRendererRef.current, 'Active filters:', activeCardTypes)
+    
+    if (!viewportRendererRef.current) return
+
+    // Update merchants in renderer
+    viewportRendererRef.current.updateMerchants(merchants)
+    
+    // Apply card type filter
+    if (activeCardTypes.length > 0) {
+      viewportRendererRef.current.filterByCardType(activeCardTypes)
+    } else {
+      viewportRendererRef.current.clearFilter()
+    }
+  }, [merchants, activeCardTypes])
+
+  // Handle marker click events
+  useEffect(() => {
+    if (!onMarkerClick) return
+
+    const handleMarkerClick = (event: Event) => {
+      if (event instanceof CustomEvent && event.detail?.merchant) {
+        onMarkerClick(event.detail.merchant)
+      }
     }
 
-    // Clear existing markers
-    markersRef.current.forEach(marker => marker.setMap(null))
-    markersRef.current = []
+    // Listen for marker click events from ViewportMarkerRenderer
+    window.addEventListener('markerClick', handleMarkerClick)
 
-    // Filter merchants based on active card types
-    // If no card types are selected, show all merchants
-    const filteredMerchants = activeCardTypes.length > 0
-      ? merchants.filter(merchant => 
-          merchant.cards.some(card => activeCardTypes.includes(card.code))
-        )
-      : merchants
-
-    console.log('Adding markers for', filteredMerchants.length, 'merchants (filtered from', merchants.length, ')')
-    
-    // Create stable event handlers
-    const markerClickHandlers = new Map<number, () => void>()
-    
-    // Add new markers
-    filteredMerchants.forEach(merchant => {
-      const marker = new naver.maps.Marker({
-        position: new naver.maps.LatLng(merchant.location.lat, merchant.location.lng),
-        map: map,
-        title: merchant.name,
-        icon: {
-          content: `
-            <div class="merchant-marker" 
-                 role="button"
-                 aria-label="가맹점: ${merchant.name}"
-                 data-merchant-id="${merchant.id}"
-                 data-testid="merchant-marker"
-                 style="
-              background-color: ${merchant.cards[0]?.colorHex || '#FF0000'}; 
-              width: 32px; 
-              height: 32px; 
-              border-radius: 50%; 
-              border: 3px solid white; 
-              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-weight: bold;
-              color: white;
-              font-size: 14px;
-              cursor: pointer;
-            ">
-              ${merchant.cards[0]?.name.charAt(0) || '가'}
-            </div>
-          `,
-          size: new naver.maps.Size(32, 32),
-          anchor: new naver.maps.Point(16, 16)
-        }
-      })
-
-      // Create stable click handler
-      const clickHandler = markerClickHandlers.get(merchant.id) || (() => {
-        console.log('Marker clicked:', merchant.name)
-        onMarkerClick?.(merchant)
-      })
-      markerClickHandlers.set(merchant.id, clickHandler)
-
-      // Add click event
-      const listener = naver.maps.Event.addListener(marker, 'click', clickHandler)
-      console.log('Click listener added for:', merchant.name, 'listener:', listener)
-
-      markersRef.current.push(marker)
-    })
-
-    // Cleanup function for markers
     return () => {
-      markersRef.current.forEach(marker => marker.setMap(null))
-      markersRef.current = []
-      markerClickHandlers.clear()
+      window.removeEventListener('markerClick', handleMarkerClick)
     }
-  }, [map, merchants, activeCardTypes, onMarkerClick])
+  }, [onMarkerClick])
 
   if (!isScriptLoaded && !isScriptError) {
     return <MapSkeleton />
