@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { MapProvider } from '@/contexts/MapContext'
 import MapContainer from '@/components/map/MapContainer'
+import MerchantList from '@/components/merchant/MerchantList'
 import { sampleMerchants as MOCK_MERCHANTS } from '@/data/sampleMerchants'
 import type { Merchant } from '@/types/merchant'
 import type { MapBounds } from '@/hooks/useMapBounds'
@@ -17,6 +18,9 @@ export default function MapPage() {
   const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null)
   const [activeCardTypes, setActiveCardTypes] = useState<string[]>([])
   const [currentBounds, setCurrentBounds] = useState<MapBounds | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
 
   console.log('MapPage - activeCardTypes state:', activeCardTypes)
 
@@ -57,6 +61,24 @@ export default function MapPage() {
     setSelectedMerchant(merchant)
   }
 
+  const handleLoadMore = async () => {
+    if (isLoadingMore || !hasMore) return
+
+    setIsLoadingMore(true)
+    // 실제로는 API 호출로 추가 데이터 로드
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    setIsLoadingMore(false)
+    
+    // 데모용: 500개 이상이면 더 이상 로드하지 않음
+    if (MOCK_MERCHANTS.length >= 500) {
+      setHasMore(false)
+    }
+  }
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen)
+  }
+
   const handleCardTypeFilter = (cardType: string) => {
     setActiveCardTypes(prev => {
       if (prev.includes(cardType)) {
@@ -86,15 +108,38 @@ export default function MapPage() {
     console.log('Map is ready:', map)
   }, [])
 
+  // 필터링된 가맹점 목록
+  const filteredMerchants = activeCardTypes.length === 0 
+    ? MOCK_MERCHANTS 
+    : MOCK_MERCHANTS.filter(merchant =>
+        merchant.cards.some(card => activeCardTypes.includes(card.code))
+      )
+
   return (
     <MapProvider>
       <div className="h-screen flex flex-col">
         <header className="bg-white shadow-sm z-10 relative">
           <div className="px-4 py-3">
             <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Card-Map</h1>
-                <p className="text-sm text-gray-600">복지카드 가맹점 지도</p>
+              <div className="flex items-center gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">Card-Map</h1>
+                  <p className="text-sm text-gray-600">복지카드 가맹점 지도</p>
+                </div>
+                {/* 사이드바 토글 버튼 */}
+                <button
+                  onClick={toggleSidebar}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  aria-label={sidebarOpen ? '사이드바 닫기' : '사이드바 열기'}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {sidebarOpen ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                    )}
+                  </svg>
+                </button>
               </div>
               
               {/* 카드 타입 필터 */}
@@ -182,13 +227,48 @@ export default function MapPage() {
           </div>
         </header>
         
-        <main className="flex-1 relative">
-          <MapContainer 
-            merchants={MOCK_MERCHANTS}
-            activeCardTypes={activeCardTypes}
-            onMarkerClick={handleMarkerClick}
-            onMapReady={handleMapReady}
-          />
+        <main className="flex-1 flex relative">
+          {/* 사이드바 - 가맹점 목록 */}
+          <div className={`transition-all duration-300 ${sidebarOpen ? 'w-96' : 'w-0'} overflow-hidden border-r border-gray-200 bg-white`}>
+            {sidebarOpen && (
+              <div className="h-full flex flex-col">
+                {/* 목록 헤더 */}
+                <div className="px-4 py-3 border-b border-gray-200">
+                  <h3 className="font-semibold text-gray-900">
+                    검색 결과: {filteredMerchants.length}개
+                  </h3>
+                  {activeCardTypes.length > 0 && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      필터 적용됨
+                    </p>
+                  )}
+                </div>
+                
+                {/* 가맹점 목록 */}
+                <div className="flex-1 overflow-hidden">
+                  <MerchantList
+                    merchants={filteredMerchants}
+                    onItemClick={handleMarkerClick}
+                    onLoadMore={handleLoadMore}
+                    isLoading={false}
+                    isLoadingMore={isLoadingMore}
+                    hasMore={hasMore}
+                    selectedMerchantId={selectedMerchant?.id}
+                    filterKey={activeCardTypes.join(',')}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 지도 영역 */}
+          <div className="flex-1 relative">
+            <MapContainer 
+              merchants={filteredMerchants}
+              activeCardTypes={activeCardTypes}
+              onMarkerClick={handleMarkerClick}
+              onMapReady={handleMapReady}
+            />
           
           {/* 선택된 가맹점 정보 */}
           {selectedMerchant && (
@@ -229,16 +309,17 @@ export default function MapPage() {
             </div>
           )}
 
-          {/* Bounds info (debug) */}
-          {currentBounds && (
-            <div className="absolute bottom-4 left-4 z-10 bg-white p-2 rounded shadow text-xs max-w-xs">
-              <div className="font-semibold mb-1">Viewport Bounds</div>
-              <div>North: {currentBounds.north.toFixed(6)}</div>
-              <div>South: {currentBounds.south.toFixed(6)}</div>
-              <div>East: {currentBounds.east.toFixed(6)}</div>
-              <div>West: {currentBounds.west.toFixed(6)}</div>
-            </div>
-          )}
+            {/* Bounds info (debug) */}
+            {currentBounds && (
+              <div className="absolute bottom-4 left-4 z-10 bg-white p-2 rounded shadow text-xs max-w-xs">
+                <div className="font-semibold mb-1">Viewport Bounds</div>
+                <div>North: {currentBounds.north.toFixed(6)}</div>
+                <div>South: {currentBounds.south.toFixed(6)}</div>
+                <div>East: {currentBounds.east.toFixed(6)}</div>
+                <div>West: {currentBounds.west.toFixed(6)}</div>
+              </div>
+            )}
+          </div>
         </main>
       </div>
     </MapProvider>
