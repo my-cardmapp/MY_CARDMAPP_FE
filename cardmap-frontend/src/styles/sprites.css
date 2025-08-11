@@ -1,0 +1,151 @@
+/**
+ * Sprite Icon Styles
+ */
+
+/* Base sprite icon styles */
+.sprite-icon {
+  display: inline-block;
+  background-repeat: no-repeat;
+  vertical-align: middle;
+  transition: opacity 0.2s ease;
+}
+
+/* Loading state */
+.sprite-icon--loading {
+  opacity: 0.5;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Clickable state */
+.sprite-icon--clickable {
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.sprite-icon--clickable:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
+.sprite-icon--clickable:active {
+  transform: scale(0.95);
+}
+
+.sprite-icon--clickable:focus {
+  outline: 2px solid #4A90E2;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Sprite type specific styles */
+.sprite-icon--cards {
+  /* Card icons are larger */
+  min-width: 48px;
+  min-height: 48px;
+}
+
+.sprite-icon--categories {
+  /* Category icons are medium sized */
+  min-width: 32px;
+  min-height: 32px;
+}
+
+.sprite-icon--ui {
+  /* UI icons are smaller */
+  min-width: 24px;
+  min-height: 24px;
+}
+
+/* Responsive icon sizes */
+.sprite-icon--responsive {
+  /* Default to smallest size */
+  width: var(--icon-size-sm, 16px) !important;
+  height: var(--icon-size-sm, 16px) !important;
+}
+
+/* Small screens */
+@media (min-width: 640px) {
+  .sprite-icon--responsive[data-size-sm] {
+    width: calc(var(--icon-size-sm, 16) * 1px) !important;
+    height: calc(var(--icon-size-sm, 16) * 1px) !important;
+  }
+}
+
+/* Medium screens */
+@media (min-width: 768px) {
+  .sprite-icon--responsive[data-size-md] {
+    width: calc(var(--icon-size-md, 24) * 1px) !important;
+    height: calc(var(--icon-size-md, 24) * 1px) !important;
+  }
+}
+
+/* Large screens */
+@media (min-width: 1024px) {
+  .sprite-icon--responsive[data-size-lg] {
+    width: calc(var(--icon-size-lg, 32) * 1px) !important;
+    height: calc(var(--icon-size-lg, 32) * 1px) !important;
+  }
+}
+
+/* Animation for loading */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Retina display support */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .sprite-icon--retina {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .sprite-icon--ui {
+    filter: brightness(0.9);
+  }
+  
+  .sprite-icon--clickable:hover {
+    filter: brightness(1.1);
+  }
+}
+
+/* Accessibility - High contrast mode */
+@media (prefers-contrast: high) {
+  .sprite-icon {
+    filter: contrast(1.2);
+  }
+  
+  .sprite-icon--clickable:focus {
+    outline-width: 3px;
+    outline-color: currentColor;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .sprite-icon,
+  .sprite-icon--clickable {
+    transition: none;
+  }
+  
+  .sprite-icon--loading {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+/* Print styles */
+@media print {
+  .sprite-icon {
+    /* Ensure sprites are visible in print */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
