@@ -1,12 +1,15 @@
 import React, { memo } from 'react';
 import type { Merchant } from '@/types/merchant';
 import { CARD_STYLES } from '@/constants/cardStyles';
+import { LazyImage } from '@/components/common/LazyImage';
+import { useLazyLoad } from '@/hooks/useLazyLoad';
 
 interface MerchantListItemProps {
   merchant: Merchant;
   onClick: (merchant: Merchant) => void;
   isSelected?: boolean;
   isLoading?: boolean;
+  lazyLoadImages?: boolean;
 }
 
 /**
@@ -17,8 +20,15 @@ const MerchantListItem = memo(function MerchantListItem({
   merchant,
   onClick,
   isSelected = false,
-  isLoading = false
+  isLoading = false,
+  lazyLoadImages = true
 }: MerchantListItemProps) {
+  // Lazy load the entire item for better performance
+  const { ref, hasBeenVisible } = useLazyLoad({
+    rootMargin: '100px',
+    threshold: 0.1,
+    once: true
+  });
   // 거리 포맷팅
   const formatDistance = (distance?: number) => {
     if (!distance) return null;
@@ -48,8 +58,34 @@ const MerchantListItem = memo(function MerchantListItem({
     }
   };
 
+  // Skeleton for items not yet visible
+  if (!hasBeenVisible && lazyLoadImages) {
+    return (
+      <div 
+        ref={ref as any}
+        className="w-full p-4 border-b border-gray-200 animate-pulse"
+      >
+        <div className="flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            <div className="h-5 w-32 bg-gray-200 rounded mb-2"></div>
+            <div className="h-4 w-48 bg-gray-200 rounded mb-2"></div>
+            <div className="flex gap-1">
+              <div className="h-5 w-16 bg-gray-200 rounded-full"></div>
+              <div className="h-5 w-16 bg-gray-200 rounded-full"></div>
+            </div>
+          </div>
+          <div className="flex flex-col items-end ml-3">
+            <div className="w-8 h-8 bg-gray-200 rounded-full mb-1"></div>
+            <div className="h-4 w-12 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <button
+      ref={ref as any}
       role="button"
       onClick={handleClick}
       data-selected={isSelected}
