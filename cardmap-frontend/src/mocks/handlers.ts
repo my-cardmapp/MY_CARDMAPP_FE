@@ -1,95 +1,10 @@
 import { http, HttpResponse } from 'msw';
+import { merchantHandlers } from './handlers/merchants';
 
-// 기본 API 핸들러들
+// 기본 API 핸들러들 (merchant 핸들러는 별도 파일로 분리)
 export const handlers = [
-  // GET /api/v1/merchants - 가맹점 목록 조회
-  http.get('/api/v1/merchants', () => {
-    return HttpResponse.json({
-      content: [],
-      pageable: {
-        page: 0,
-        size: 20,
-        sort: []
-      },
-      totalElements: 0,
-      totalPages: 0,
-      first: true,
-      last: true
-    }, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-  }),
-
-  // GET /api/v1/merchants/:id - 가맹점 상세 조회
-  http.get('/api/v1/merchants/:id', ({ params }) => {
-    const { id } = params;
-    
-    return HttpResponse.json({
-      id: Number(id),
-      name: `가맹점 ${id}`,
-      address: '서울특별시 강남구 테헤란로 123',
-      location: { lat: 37.5665, lng: 126.9780 },
-      cards: [],
-      category: { id: 1, code: 'RESTAURANT', name: '음식점' },
-      isVerified: true
-    }, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-  }),
-
-  // GET /api/v1/merchants/nearby - 근처 가맹점 조회
-  http.get('/api/v1/merchants/nearby', ({ request }) => {
-    const url = new URL(request.url);
-    const lat = url.searchParams.get('lat');
-    const lng = url.searchParams.get('lng');
-    const radius = url.searchParams.get('radius') || '500';
-
-    return HttpResponse.json({
-      merchants: [],
-      center: { 
-        lat: lat ? parseFloat(lat) : 37.5665, 
-        lng: lng ? parseFloat(lng) : 126.9780 
-      },
-      radius: parseInt(radius)
-    }, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-  }),
-
-  // GET /api/v1/merchants/search - 가맹점 검색
-  http.get('/api/v1/merchants/search', ({ request }) => {
-    const url = new URL(request.url);
-    const query = url.searchParams.get('query') || '';
-
-    return HttpResponse.json({
-      content: [],
-      query,
-      suggestions: [],
-      pageable: {
-        page: 0,
-        size: 20,
-        sort: []
-      },
-      totalElements: 0,
-      totalPages: 0,
-      first: true,
-      last: true
-    }, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-  }),
+  // Merchant 관련 핸들러는 merchantHandlers에서 가져옴
+  ...merchantHandlers,
 
   // GET /api/v1/cards - 카드 목록 조회
   http.get('/api/v1/cards', () => {
