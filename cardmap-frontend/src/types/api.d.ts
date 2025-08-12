@@ -96,6 +96,17 @@ export interface MerchantSearchResponse extends PageResponse<Merchant> {
   suggestions?: string[];
 }
 
+export interface MerchantSearchRequest {
+  query?: string;
+  cardTypes?: string[];
+  categories?: string[];
+  lat?: number;
+  lng?: number;
+  radius?: number;
+  page?: number;
+  size?: number;
+}
+
 export interface NearbyMerchantsRequest {
   lat: number;
   lng: number;
@@ -129,7 +140,7 @@ export interface RouteCalculateRequest {
   origin: Location;
   destination: Location;
   waypoints?: Location[];
-  mode: 'walking' | 'transit' | 'driving';
+  mode?: 'walking' | 'transit' | 'driving';
   departureTime?: string; // ISO 8601
   avoidTolls?: boolean;
 }
@@ -232,18 +243,23 @@ export interface ChatResponse {
 
 export interface ChatAction {
   type: 'show_merchants' | 'calculate_route' | 'filter_results';
-  data: any;
+  data: Record<string, unknown>;
 }
 
 export interface IntentRequest {
   query: string;
-  context?: any;
+  context?: {
+    location?: Location;
+    previousQueries?: string[];
+    cardTypes?: string[];
+    sessionId?: string;
+  };
 }
 
 export interface IntentResponse {
   intent: string;
   confidence: number;
-  entities: { [key: string]: any };
+  entities: Record<string, unknown>;
   requiresAI: boolean;
 }
 
@@ -255,5 +271,5 @@ export interface ErrorResponse {
   message: string;
   path: string;
   requestId?: string;
-  details?: { [key: string]: any };
+  details?: Record<string, unknown>;
 }
