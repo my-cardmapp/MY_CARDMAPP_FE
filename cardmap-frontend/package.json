@@ -45,10 +45,16 @@
     "eslint": "^9",
     "eslint-config-next": "15.4.4",
     "jsdom": "^26.1.0",
+    "msw": "^2.10.4",
     "playwright": "^1.54.1",
     "prettier": "^3.6.2",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^3.2.4"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }
