@@ -1,5 +1,12 @@
-import { http, HttpResponse } from 'msw';
+import { http, HttpResponse, delay } from 'msw';
 import { generateMerchants } from '../generators/merchants';
+import { 
+  applyNetworkConditions, 
+  createNetworkDelay,
+  isErrorTrigger,
+  getErrorResponse,
+  NetworkErrorType 
+} from '../utils/network';
 import type { 
   Merchant, 
   MerchantListResponse, 
@@ -92,7 +99,7 @@ function generateReviews(merchantId: number): Review[] {
 
 export const merchantHandlers = [
   // GET /api/v1/merchants/nearby - 근처 가맹점 조회 (더 구체적인 경로를 먼저)
-  http.get('*/api/v1/merchants/nearby', ({ request }) => {
+  http.get('*/api/v1/merchants/nearby', async ({ request }) => {
     const url = new URL(request.url);
     const lat = parseFloat(url.searchParams.get('lat') || '37.5665');
     const lng = parseFloat(url.searchParams.get('lng') || '126.9780');
@@ -100,6 +107,12 @@ export const merchantHandlers = [
     const cardTypes = url.searchParams.get('cardTypes')?.split(',') || [];
     const categories = url.searchParams.get('categories')?.split(',') || [];
     const limit = parseInt(url.searchParams.get('limit') || '20');
+    
+    // Apply network conditions
+    const error = await applyNetworkConditions('GET', request.url);
+    if (error) {
+      return HttpResponse.json(error, { status: error.status });
+    }
     
     let merchants = getMerchants();
     
@@ -151,12 +164,25 @@ export const merchantHandlers = [
   }),
 
   // GET /api/v1/merchants/search - 가맹점 검색 (더 구체적인 경로)
-  http.get('*/api/v1/merchants/search', ({ request }) => {
+  http.get('*/api/v1/merchants/search', async ({ request }) => {
     const url = new URL(request.url);
     const query = url.searchParams.get('query') || '';
     const cardTypes = url.searchParams.get('cardTypes')?.split(',') || [];
     const page = parseInt(url.searchParams.get('page') || '0');
     const size = parseInt(url.searchParams.get('size') || '20');
+    
+    // Check for error trigger
+    if (isErrorTrigger('search', query)) {
+      await createNetworkDelay(200);
+      const error = getErrorResponse(NetworkErrorType.SERVER_ERROR, request.url);
+      return HttpResponse.json(error, { status: error.status });
+    }
+    
+    // Apply network conditions
+    const error = await applyNetworkConditions('GET', request.url, { query });
+    if (error) {
+      return HttpResponse.json(error, { status: error.status });
+    }
     
     let merchants = getMerchants();
     
@@ -229,13 +255,19 @@ export const merchantHandlers = [
   }),
 
   // GET /api/v1/merchants - 가맹점 목록 조회 (페이징, 필터링, 정렬)
-  http.get('*/api/v1/merchants', ({ request }) => {
+  http.get('*/api/v1/merchants', async ({ request }) => {
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '0');
     const size = parseInt(url.searchParams.get('size') || '20');
     const cardTypes = url.searchParams.get('cardTypes')?.split(',') || [];
     const categories = url.searchParams.get('categories')?.split(',') || [];
     const sort = url.searchParams.get('sort')?.split(',') || [];
+    
+    // Apply network conditions
+    const error = await applyNetworkConditions('GET', request.url);
+    if (error) {
+      return HttpResponse.json(error, { status: error.status });
+    }
     
     let merchants = getMerchants();
     
@@ -302,21 +334,20 @@ export const merchantHandlers = [
   }),
 
   // GET /api/v1/merchants/:id - 가맹점 상세 조회
-  http.get('*/api/v1/merchants/:id', ({ params }) => {
+  http.get('*/api/v1/merchants/:id', async ({ params, request }) => {
     const merchantId = Number(params.id);
     
     // 404 에러 시뮬레이션
-    if (merchantId > 10000) {
-      return HttpResponse.json(
-        {
-          timestamp: new Date().toISOString(),
-          status: 404,
-          error: 'Not Found',
-          message: `Merchant with id ${merchantId} not found`,
-          path: `/api/v1/merchants/${merchantId}`
-        },
-        { status: 404 }
-      );
+    if (isErrorTrigger('merchant', merchantId)) {
+      await createNetworkDelay(100);
+      const error = getErrorResponse(NetworkErrorType.NOT_FOUND, request.url);
+      return HttpResponse.json(error, { status: error.status });
+    }
+    
+    // Apply network conditions
+    const error = await applyNetworkConditions('GET', request.url);
+    if (error) {
+      return HttpResponse.json(error, { status: error.status });
     }
     
     const merchants = getMerchants();

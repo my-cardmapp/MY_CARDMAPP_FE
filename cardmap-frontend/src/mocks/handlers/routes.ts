@@ -1,4 +1,12 @@
 import { http, HttpResponse } from 'msw';
+import { 
+  applyNetworkConditions,
+  createNetworkDelay,
+  isErrorTrigger,
+  getErrorResponse,
+  NetworkErrorType,
+  simulateTimeout
+} from '../utils/network';
 import type {
   RouteCalculateRequest,
   RouteCalculateResponse,
@@ -120,6 +128,23 @@ export const routeHandlers = [
   // POST /api/v1/routes/calculate - 경로 계산
   http.post('*/api/v1/routes/calculate', async ({ request }) => {
     const body = await request.json() as RouteCalculateRequest;
+    
+    // Check for timeout trigger (too many waypoints)
+    if (isErrorTrigger('route', body)) {
+      // Simulate long processing before timeout
+      try {
+        await simulateTimeout(5000);
+      } catch {
+        const error = getErrorResponse(NetworkErrorType.TIMEOUT, request.url);
+        return HttpResponse.json(error, { status: error.status });
+      }
+    }
+    
+    // Apply network conditions
+    const error = await applyNetworkConditions('POST', request.url, body);
+    if (error) {
+      return HttpResponse.json(error, { status: error.status });
+    }
     const { origin, destination, waypoints = [], mode = 'walking' } = body;
     
     // 전체 경로 거리 계산
@@ -236,11 +261,17 @@ export const routeHandlers = [
   }),
 
   // GET /api/v1/routes/optimize - 경로 최적화
-  http.get('*/api/v1/routes/optimize', ({ request }) => {
+  http.get('*/api/v1/routes/optimize', async ({ request }) => {
     const url = new URL(request.url);
     const originStr = url.searchParams.get('origin') || '37.5665,126.9780';
     const waypointsStr = url.searchParams.get('waypoints') || '';
     const mode = url.searchParams.get('mode') || 'walking';
+    
+    // Apply network conditions
+    const error = await applyNetworkConditions('GET', request.url);
+    if (error) {
+      return HttpResponse.json(error, { status: error.status });
+    }
     
     // 좌표 파싱
     const [originLat, originLng] = originStr.split(',').map(Number);
