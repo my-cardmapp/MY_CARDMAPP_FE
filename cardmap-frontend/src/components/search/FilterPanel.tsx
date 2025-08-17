@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { CheckboxGroup } from '../ui/CheckboxGroup';
 import type { CheckboxOption } from '../ui/CheckboxGroup';
 import type { CardDetail, Category } from '@/types/api';
+import { useSearchStore } from '@/stores/searchStore';
 
 export interface FilterState {
   cardTypes: string[];
@@ -9,17 +10,31 @@ export interface FilterState {
 }
 
 export interface FilterPanelProps {
-  onFiltersChange: (filters: FilterState) => void;
+  onFiltersChange?: (filters: FilterState) => void;
   initialFilters?: FilterState;
   className?: string;
+  useStore?: boolean; // Flag to enable store integration
 }
 
 export const FilterPanel: React.FC<FilterPanelProps> = ({
   onFiltersChange,
   initialFilters = { cardTypes: [], categories: [] },
   className = '',
+  useStore = false, // Default to false for backward compatibility
 }) => {
-  const [filters, setFilters] = useState<FilterState>(initialFilters);
+  // Store integration - only connect when explicitly enabled
+  const storeCardTypes = useStore ? useSearchStore(state => state.activeCardTypes) : [];
+  const storeCategories = useStore ? useSearchStore(state => state.activeCategories) : [];
+  const setStoreCardTypes = useStore ? useSearchStore(state => state.setCardTypes) : null;
+  const setStoreCategories = useStore ? useSearchStore(state => state.setCategories) : null;
+  const clearStoreFilters = useStore ? useSearchStore(state => state.clearFilters) : null;
+
+  // Use store state if enabled, otherwise use local state
+  const [localFilters, setLocalFilters] = useState<FilterState>(initialFilters);
+  const filters = useStore 
+    ? { cardTypes: storeCardTypes, categories: storeCategories }
+    : localFilters;
+
   const [cardOptions, setCardOptions] = useState<CheckboxOption[]>([]);
   const [categoryOptions, setCategoryOptions] = useState<CheckboxOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,10 +53,12 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Update filters when initialFilters change
+  // Update filters when initialFilters change (only for local state mode)
   useEffect(() => {
-    setFilters(initialFilters);
-  }, [initialFilters]);
+    if (!useStore) {
+      setLocalFilters(initialFilters);
+    }
+  }, [initialFilters, useStore]);
 
   // Load filter options from API
   const loadFilterOptions = useCallback(async () => {
@@ -51,7 +68,9 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     try {
       // Load card types
       const cardsResponse = await fetch('/api/v1/cards');
-      if (!cardsResponse.ok) throw new Error('Failed to load card types');
+      if (!cardsResponse.ok) {
+        throw new Error('Failed to load card types');
+      }
       const cardsData = await cardsResponse.json();
       
       const cardOpts: CheckboxOption[] = cardsData.cards.map((card: CardDetail) => ({
@@ -64,7 +83,9 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
 
       // Load categories
       const categoriesResponse = await fetch('/api/v1/suggestions/categories?withCodes=true');
-      if (!categoriesResponse.ok) throw new Error('Failed to load categories');
+      if (!categoriesResponse.ok) {
+        throw new Error('Failed to load categories');
+      }
       const categoriesData = await categoriesResponse.json();
       
       const categoryOpts: CheckboxOption[] = categoriesData.categories.map((cat: Category) => ({
@@ -77,8 +98,12 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
 
       setIsLoading(false);
     } catch (err) {
+      console.error('Failed to load filters:', err);
       setError('필터를 불러오는 중 오류가 발생했습니다.');
       setIsLoading(false);
+      // Clear options on error
+      setCardOptions([]);
+      setCategoryOptions([]);
     }
   }, []);
 
@@ -88,23 +113,35 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
 
   // Handle filter changes
   const handleCardTypesChange = useCallback((values: string[]) => {
-    const newFilters = { ...filters, cardTypes: values };
-    setFilters(newFilters);
-    onFiltersChange(newFilters);
-  }, [filters, onFiltersChange]);
+    if (useStore && setStoreCardTypes) {
+      setStoreCardTypes(values);
+    } else {
+      const newFilters = { ...filters, cardTypes: values };
+      setLocalFilters(newFilters);
+      onFiltersChange?.(newFilters);
+    }
+  }, [filters, onFiltersChange, useStore, setStoreCardTypes]);
 
   const handleCategoriesChange = useCallback((values: string[]) => {
-    const newFilters = { ...filters, categories: values };
-    setFilters(newFilters);
-    onFiltersChange(newFilters);
-  }, [filters, onFiltersChange]);
+    if (useStore && setStoreCategories) {
+      setStoreCategories(values);
+    } else {
+      const newFilters = { ...filters, categories: values };
+      setLocalFilters(newFilters);
+      onFiltersChange?.(newFilters);
+    }
+  }, [filters, onFiltersChange, useStore, setStoreCategories]);
 
   // Clear all filters
   const handleClearAll = useCallback(() => {
-    const newFilters = { cardTypes: [], categories: [] };
-    setFilters(newFilters);
-    onFiltersChange(newFilters);
-  }, [onFiltersChange]);
+    if (useStore && clearStoreFilters) {
+      clearStoreFilters();
+    } else {
+      const newFilters = { cardTypes: [], categories: [] };
+      setLocalFilters(newFilters);
+      onFiltersChange?.(newFilters);
+    }
+  }, [onFiltersChange, useStore, clearStoreFilters]);
 
   // Calculate total active filters
   const totalActiveFilters = useMemo(
