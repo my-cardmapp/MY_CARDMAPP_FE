@@ -40,17 +40,64 @@ const MapContainer: React.FC<MapContainerProps> = React.memo(({
   
   const mapRef = useRef<HTMLDivElement>(null)
   const { map, setMap, isScriptLoaded, isScriptError } = useMapContext()
+  console.log('MapContainer - isScriptLoaded:', isScriptLoaded, 'isScriptError:', isScriptError)
   const [isDragging, setIsDragging] = useState(false)
   const [currentBounds, setCurrentBounds] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [currentZoom, setCurrentZoom] = useState(zoom)
   const viewportRendererRef = useRef<ViewportMarkerRenderer | null>(null)
+  const resizeObserverRef = useRef<ResizeObserver | null>(null)
+  const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   
   // Debounced bounds for API calls (300ms delay)
   const debouncedBounds = useDebounce(currentBounds, 300)
   
   // Throttled zoom for performance (using requestAnimationFrame)
   const throttledZoom = useThrottle(currentZoom, 100, true)
+
+  // Setup ResizeObserver to handle container size changes
+  useEffect(() => {
+    if (!map || !mapRef.current) return
+
+    const handleResize = () => {
+      // Clear existing timeout
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current)
+      }
+      
+      // Debounce resize handling
+      resizeTimeoutRef.current = setTimeout(() => {
+        if (map) {
+          console.log('MapContainer - Container resized, refreshing map')
+          // Force map to recalculate its size and re-render tiles
+          map.refresh(true)
+          
+          // Trigger additional refreshes to ensure complete rendering
+          setTimeout(() => {
+            map.refresh(false)
+          }, 150)
+          
+          setTimeout(() => {
+            map.refresh(true)
+          }, 400) // After transition is complete
+        }
+      }, 150) // Increased debounce time
+    }
+
+    // Create ResizeObserver
+    resizeObserverRef.current = new ResizeObserver(handleResize)
+    resizeObserverRef.current.observe(mapRef.current)
+
+    return () => {
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect()
+        resizeObserverRef.current = null
+      }
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current)
+      }
+    }
+  }, [map])
 
   // Initialize map
   useEffect(() => {
@@ -59,6 +106,12 @@ const MapContainer: React.FC<MapContainerProps> = React.memo(({
     // Get current map instance and check if already initialized
     const currentMap = map
     if (currentMap) return
+
+    // Double check that naver.maps is available
+    if (!window.naver?.maps) {
+      console.warn('MapContainer - Script loaded but naver.maps not available yet')
+      return
+    }
 
     console.log('MapContainer - Creating map...')
     const newMap = new naver.maps.Map(mapRef.current, {

@@ -1,7 +1,7 @@
 'use client'
 
 import Script from 'next/script'
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useEffect } from 'react'
 
 interface NaverMapScriptProps {
   clientId: string
@@ -14,31 +14,76 @@ export function NaverMapScript({
   onLoad, 
   onError 
 }: NaverMapScriptProps) {
-  // Removed internal state to avoid re-render issues
+  const timeoutRef = useRef<NodeJS.Timeout>()
+  const retryCountRef = useRef(0)
+  const loadedRef = useRef(false)
+  
+  // Check if script already loaded on mount
+  useEffect(() => {
+    if (window.naver?.maps && !loadedRef.current) {
+      console.log('✅ Naver Map SDK already loaded')
+      loadedRef.current = true
+      onLoad?.()
+    }
+    
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
+  }, [])
+  
   const handleScriptLoad = useCallback(() => {
+    // Prevent multiple calls
+    if (loadedRef.current) return
+    
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
+    
     // 인증 실패 핸들러 설정
     window.navermap_authFailure = () => {
       console.error('❌ Naver Map authentication failed')
+      loadedRef.current = false
       onError?.()
     }
     
-    // Script 태그는 로드되었지만 실제 naver.maps 객체가 사용 가능한지 확인
-    if (window.naver?.maps) {
-      console.log('✅ Naver Map SDK loaded successfully')
-      onLoad?.()
-    } else {
-      console.warn('⚠️ Script loaded but naver.maps not available')
-      // Retry after a short delay
-      setTimeout(() => {
-        if (window.naver?.maps) {
-          console.log('✅ Naver Map SDK available after retry')
-          onLoad?.()
-        } else {
-          console.error('❌ Naver Map SDK failed to initialize')
-          onError?.()
-        }
-      }, 100)
+    // Function to check if maps are available
+    const checkMapsAvailable = () => {
+      if (window.naver?.maps) {
+        console.log('✅ Naver Map SDK loaded successfully')
+        loadedRef.current = true
+        onLoad?.()
+        return true
+      }
+      return false
     }
+    
+    // Try immediately
+    if (checkMapsAvailable()) return
+    
+    // Retry logic with exponential backoff
+    const retryLoad = () => {
+      retryCountRef.current++
+      
+      if (retryCountRef.current > 5) {
+        console.error('❌ Naver Map SDK failed to initialize after 5 retries')
+        onError?.()
+        return
+      }
+      
+      console.warn(`⚠️ Script loaded but naver.maps not available, retry ${retryCountRef.current}/5`)
+      
+      if (checkMapsAvailable()) return
+      
+      // Exponential backoff: 100ms, 200ms, 400ms, 800ms, 1600ms
+      const delay = 100 * Math.pow(2, retryCountRef.current - 1)
+      timeoutRef.current = setTimeout(retryLoad, delay)
+    }
+    
+    // Start retry process
+    timeoutRef.current = setTimeout(retryLoad, 100)
   }, [onLoad, onError])
 
   const handleScriptError = useCallback(() => {

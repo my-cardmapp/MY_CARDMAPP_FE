@@ -77,6 +77,10 @@ export default function MapPage() {
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen)
+    // Trigger map refresh after sidebar animation completes
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'))
+    }, 350) // After CSS transition (300ms)
   }
 
   const handleCardTypeFilter = (cardType: string) => {

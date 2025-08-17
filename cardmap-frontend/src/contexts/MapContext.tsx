@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useCallback, ReactNode, useRef } from 'react'
+import React, { createContext, useContext, useState, useCallback, ReactNode, useRef, useEffect } from 'react'
 import { NaverMapScript } from '@/components/map/NaverMapScript'
 
 interface MapContextType {
@@ -32,7 +32,26 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
   const [isMapReady, setIsMapReady] = useState(false)
   const [isScriptLoaded, setIsScriptLoaded] = useState(false)
   const [isScriptError, setIsScriptError] = useState(false)
+  const timeoutRef = useRef<NodeJS.Timeout>()
   const naverMapClientId = process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID || ''
+
+  // Set timeout for script loading (15 seconds)
+  useEffect(() => {
+    if (!isScriptLoaded && !isScriptError) {
+      timeoutRef.current = setTimeout(() => {
+        if (!isScriptLoaded) {
+          console.error('MapProvider: Script loading timeout after 15 seconds')
+          setIsScriptError(true)
+        }
+      }, 15000)
+    }
+    
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
+  }, [isScriptLoaded, isScriptError])
 
   // Memoized setMap to prevent recreation on each render
   const setMap = useCallback((newMap: naver.maps.Map | null) => {
@@ -48,30 +67,31 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
 
   const handleScriptLoad = useCallback(() => {
     console.log('MapProvider: Script loaded')
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
     setIsScriptLoaded(true)
     setIsScriptError(false)
   }, [])
 
   const handleScriptError = useCallback(() => {
     console.error('MapProvider: Script error')
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
     setIsScriptError(true)
     setIsScriptLoaded(false)
   }, [])
 
-  // Create stable context value to prevent unnecessary re-renders
-  const contextValue = useRef<MapContextType>({
+  // Create context value with proper state updates
+  const contextValue = React.useMemo<MapContextType>(() => ({
     get map() { return mapRef.current },
     isMapReady,
     isScriptLoaded,
     isScriptError,
     setMap,
     getMap,
-  })
-
-  // Update only the properties that can change
-  contextValue.current.isMapReady = isMapReady
-  contextValue.current.isScriptLoaded = isScriptLoaded
-  contextValue.current.isScriptError = isScriptError
+  }), [isMapReady, isScriptLoaded, isScriptError, setMap, getMap])
 
   return (
     <>
@@ -80,7 +100,7 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
         onLoad={handleScriptLoad}
         onError={handleScriptError}
       />
-      <MapContext.Provider value={contextValue.current}>
+      <MapContext.Provider value={contextValue}>
         {children}
       </MapContext.Provider>
     </>

@@ -677,9 +677,75 @@ public class AIQueryOptimizer {
 - **AI Cost**: 일일 예산 80% 초과
 - **Security**: 비정상 접근 패턴
 
-## 9. 개발 프로세스
+## 9. 프로젝트 현재 구현 상태
 
-### 9.1 Card-Map 개발 워크플로우
+### 9.1 Frontend 아키텍처
+
+#### 구현 완료된 컴포넌트
+- **MapContainer**: 네이버 지도를 감싸는 메인 컨테이너
+  - ResizeObserver를 통한 반응형 처리
+  - 지도 상태 관리 (zoom, bounds, dragging)
+  - ViewportMarkerRenderer 통합
+  - 세션 스토리지를 통한 viewport 상태 유지
+  
+- **NaverMapScript**: 네이버 지도 SDK 로딩 관리
+  - 재시도 로직 (exponential backoff)
+  - 인증 실패 핸들링
+  - 스크립트 로드 상태 관리
+  
+- **MapContext**: 전역 지도 상태 관리
+  - 지도 인스턴스 관리
+  - 스크립트 로드 상태
+  - 에러 상태 처리
+  
+- **ViewportMarkerRenderer**: 효율적인 마커 렌더링
+  - Viewport 기반 마커 필터링
+  - 클러스터링 지원 (Supercluster)
+  - 카드 타입별 필터링
+  - 성능 최적화 (debounce, throttle)
+
+#### Mock API Service (MSW)
+- **구현된 엔드포인트** (10개):
+  - GET /api/v1/merchants - 가맹점 목록 (페이징, 필터링)
+  - GET /api/v1/merchants/:id - 가맹점 상세
+  - GET /api/v1/merchants/nearby - 위치 기반 검색
+  - GET /api/v1/merchants/search - 텍스트 검색
+  - GET /api/v1/cards - 카드 타입 목록
+  - POST /api/v1/routes/calculate - 경로 계산
+  - GET /api/v1/routes/optimize - 경로 최적화
+  - POST /api/v1/auth/login - 로그인
+  - POST /api/v1/auth/refresh - 토큰 갱신
+  - POST /api/v1/auth/logout - 로그아웃
+
+- **Mock 데이터 특징**:
+  - 한국어 비즈니스 이름 생성 (김밥천국, GS25 등)
+  - 실제 서울 주소 체계 (25개 구, 30개 동)
+  - 카테고리별 영업시간 패턴
+  - 카드 타입별 가맹점 분포 (CHILD_MEAL 80% 확률)
+  - 100-500ms 네트워크 지연 시뮬레이션
+  - localStorage 기반 상태 영속성
+
+### 9.2 알려진 이슈 및 해결 방법
+
+#### 현재 이슈
+1. **지도 초기 로딩 문제**
+   - 증상: 페이지 첫 로드 시 지도가 무한 로딩
+   - 원인: NaverMapScript의 타이밍 이슈
+   - 해결 방향: 스크립트 로드 확인 로직 강화
+
+2. **사이드바 토글 렌더링 문제**
+   - 증상: 사이드바 닫을 때 지도 일부가 회색으로 표시
+   - 원인: ResizeObserver 타이밍과 CSS 트랜지션 불일치
+   - 해결 방향: refresh() 호출 타이밍 최적화
+
+3. **테스트 환경 이슈**
+   - Vitest 일부 테스트 타임아웃
+   - MSW 핸들러 수 불일치
+   - E2E 테스트 환경 설정 필요
+
+## 10. 개발 프로세스
+
+### 10.1 Card-Map 개발 워크플로우
 
 #### Task Master 중심 워크플로우
 1. **작업 시작**: `task-master next`로 다음 작업 확인
@@ -826,6 +892,16 @@ redis.host=${REDIS_HOST:localhost}
 
 이 기획서는 실제 개발 진행에 따라 지속적으로 업데이트됩니다.
 
+
+
 ## Task Master AI Instructions
 **Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
 @./.taskmaster/CLAUDE.md
+
+
+## 명령어 사용시 주의할 점 (매우 중요함)
+1. npm dev run은 &를 사용하여 항상 백그라운드에서 돌릴 것
+  - 시작 이후에는 2-3분 가량 대기해야 함
+  - 만약 3000번 포트를 사용하고 있는 경우에는 ss -nltp | grep 3000 명령어를 통해 pid를 알아낸 후에 kill을 이용하여 해당 프로세스를 종료시킨 뒤에 서버를 구동한다.
+2. vitest는 npm test 와 같이 package.json에 명시되어 있는 스크립트를 이용한다.
+3. 2>&1 사용하지 말 것 (필터 오류/문제가 발생하기 때문)

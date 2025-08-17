@@ -8,12 +8,15 @@ export function MSWProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const initMSW = async () => {
       if (process.env.NODE_ENV === 'development') {
-        const { initMocks } = await import('@/mocks');
-        await initMocks();
-        setMswReady(true);
-      } else {
-        setMswReady(true);
+        try {
+          const { initMocks } = await import('@/mocks');
+          await initMocks();
+          console.log('[MSWProvider] MSW initialized successfully');
+        } catch (error) {
+          console.error('[MSWProvider] Failed to initialize MSW:', error);
+        }
       }
+      setMswReady(true);
     };
 
     initMSW();
