@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { MapProvider } from '@/contexts/MapContext'
 import MapContainer from '@/components/map/MapContainer'
 import MerchantList from '@/components/merchant/MerchantList'
+import { SearchBar } from '@/components/search/SearchBar'
 import { sampleMerchants as MOCK_MERCHANTS } from '@/data/sampleMerchants'
 import type { Merchant } from '@/types/merchant'
 import type { MapBounds } from '@/hooks/useMapBounds'
@@ -236,6 +237,14 @@ export default function MapPage() {
           <div className={`transition-all duration-300 ${sidebarOpen ? 'w-96' : 'w-0'} overflow-hidden border-r border-gray-200 bg-white`}>
             {sidebarOpen && (
               <div className="h-full flex flex-col">
+                {/* Search Bar */}
+                <div className="px-4 py-3 border-b border-gray-200">
+                  <SearchBar 
+                    placeholder="가맹점 검색..."
+                    className="mb-3"
+                  />
+                </div>
+                
                 {/* 목록 헤더 */}
                 <div className="px-4 py-3 border-b border-gray-200">
                   <h3 className="font-semibold text-gray-900">
