@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { CheckboxGroup } from '../ui/CheckboxGroup';
 import type { CheckboxOption } from '../ui/CheckboxGroup';
 import type { CardDetail, Category } from '@/types/api';
 import { useSearchStore } from '@/stores/searchStore';
+import { LoadingOverlay } from '../ui/LoadingStates';
 
 export interface FilterState {
   cardTypes: string[];
@@ -11,16 +12,24 @@ export interface FilterState {
 
 export interface FilterPanelProps {
   onFiltersChange?: (filters: FilterState) => void;
+  onFilterChange?: (filters: FilterState) => Promise<void> | void;
   initialFilters?: FilterState;
+  filters?: FilterState;
   className?: string;
   useStore?: boolean; // Flag to enable store integration
+  isUpdating?: boolean;
+  optimisticUpdates?: boolean;
 }
 
 export const FilterPanel: React.FC<FilterPanelProps> = ({
   onFiltersChange,
+  onFilterChange,
   initialFilters = { cardTypes: [], categories: [] },
+  filters: propFilters,
   className = '',
   useStore = false, // Default to false for backward compatibility
+  isUpdating = false,
+  optimisticUpdates = false,
 }) => {
   // Store integration - only connect when explicitly enabled
   const storeCardTypes = useStore ? useSearchStore(state => state.activeCardTypes) : [];
@@ -29,11 +38,14 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   const setStoreCategories = useStore ? useSearchStore(state => state.setCategories) : null;
   const clearStoreFilters = useStore ? useSearchStore(state => state.clearFilters) : null;
 
-  // Use store state if enabled, otherwise use local state
-  const [localFilters, setLocalFilters] = useState<FilterState>(initialFilters);
-  const filters = useStore 
+  // Use store state if enabled, otherwise use local state or prop filters
+  const [localFilters, setLocalFilters] = useState<FilterState>(propFilters || initialFilters);
+  const filters = propFilters || (useStore 
     ? { cardTypes: storeCardTypes, categories: storeCategories }
-    : localFilters;
+    : localFilters);
+  
+  // Store previous filters for rollback
+  const previousFilters = useRef<FilterState>(filters);
 
   const [cardOptions, setCardOptions] = useState<CheckboxOption[]>([]);
   const [categoryOptions, setCategoryOptions] = useState<CheckboxOption[]>([]);
@@ -111,26 +123,74 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     loadFilterOptions();
   }, [loadFilterOptions]);
 
-  // Handle filter changes
-  const handleCardTypesChange = useCallback((values: string[]) => {
+  // Handle filter changes with optimistic updates
+  const handleCardTypesChange = useCallback(async (values: string[]) => {
+    const newFilters = { ...filters, cardTypes: values };
+    
+    // Store current state for potential rollback
+    if (optimisticUpdates) {
+      previousFilters.current = { ...filters };
+    }
+    
+    // Apply changes optimistically
     if (useStore && setStoreCardTypes) {
       setStoreCardTypes(values);
     } else {
-      const newFilters = { ...filters, cardTypes: values };
       setLocalFilters(newFilters);
+    }
+    
+    // Call the async handler if provided
+    if (onFilterChange && optimisticUpdates) {
+      try {
+        await onFilterChange(newFilters);
+      } catch (error) {
+        // Rollback on error
+        if (useStore && setStoreCardTypes) {
+          setStoreCardTypes(previousFilters.current.cardTypes);
+        } else {
+          setLocalFilters(previousFilters.current);
+        }
+        console.error('Filter update failed:', error);
+      }
+    } else {
+      // Call sync handler
       onFiltersChange?.(newFilters);
     }
-  }, [filters, onFiltersChange, useStore, setStoreCardTypes]);
+  }, [filters, onFiltersChange, onFilterChange, useStore, setStoreCardTypes, optimisticUpdates]);
 
-  const handleCategoriesChange = useCallback((values: string[]) => {
+  const handleCategoriesChange = useCallback(async (values: string[]) => {
+    const newFilters = { ...filters, categories: values };
+    
+    // Store current state for potential rollback
+    if (optimisticUpdates) {
+      previousFilters.current = { ...filters };
+    }
+    
+    // Apply changes optimistically
     if (useStore && setStoreCategories) {
       setStoreCategories(values);
     } else {
-      const newFilters = { ...filters, categories: values };
       setLocalFilters(newFilters);
+    }
+    
+    // Call the async handler if provided
+    if (onFilterChange && optimisticUpdates) {
+      try {
+        await onFilterChange(newFilters);
+      } catch (error) {
+        // Rollback on error
+        if (useStore && setStoreCategories) {
+          setStoreCategories(previousFilters.current.categories);
+        } else {
+          setLocalFilters(previousFilters.current);
+        }
+        console.error('Filter update failed:', error);
+      }
+    } else {
+      // Call sync handler
       onFiltersChange?.(newFilters);
     }
-  }, [filters, onFiltersChange, useStore, setStoreCategories]);
+  }, [filters, onFiltersChange, onFilterChange, useStore, setStoreCategories, optimisticUpdates]);
 
   // Clear all filters
   const handleClearAll = useCallback(() => {
@@ -191,12 +251,18 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   ].filter(Boolean).join(' ');
 
   return (
-    <div 
-      data-testid="filter-panel" 
-      className={panelClasses}
-      role="region"
-      aria-label="필터 패널"
-    >
+    <>
+      {/* Loading Overlay */}
+      {isUpdating && (
+        <LoadingOverlay message="Updating filters..." />
+      )}
+      
+      <div 
+        data-testid="filter-panel" 
+        className={panelClasses}
+        role="region"
+        aria-label="필터 패널"
+      >
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -334,5 +400,6 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
         </div>
       </div>
     </div>
+    </>
   );
 };

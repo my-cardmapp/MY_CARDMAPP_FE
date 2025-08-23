@@ -9,14 +9,20 @@ export interface SearchBarProps {
   placeholder?: string;
   autoFocus?: boolean;
   onSearch?: (query: string) => void;
+  onError?: (error: { type: string; message: string }) => void;
   className?: string;
+  timeout?: number;
+  isLoading?: boolean;
 }
 
 export function SearchBar({
   placeholder = '가맹점 검색...',
   autoFocus = false,
   onSearch,
-  className = ''
+  onError,
+  className = '',
+  timeout = 30000,
+  isLoading: externalIsLoading
 }: SearchBarProps) {
   const {
     query,
@@ -100,6 +106,12 @@ export function SearchBar({
       setLoading(true);
       setError(null);
 
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, timeout);
+
       try {
         const response = await fetch(
           `/api/v1/merchants/search?query=${encodeURIComponent(debouncedQuery)}`,
@@ -107,9 +119,12 @@ export function SearchBar({
             method: 'GET',
             headers: {
               'Content-Type': 'application/json'
-            }
+            },
+            signal: controller.signal
           }
         );
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           throw new Error(`Search failed: ${response.statusText}`);
@@ -123,15 +138,36 @@ export function SearchBar({
           onSearch(debouncedQuery);
         }
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Search failed';
-        setError(errorMessage);
+        clearTimeout(timeoutId);
+        
+        if (err instanceof Error) {
+          if (err.name === 'AbortError') {
+            const timeoutError = { type: 'timeout', message: `Request timed out after ${timeout / 1000} seconds` };
+            setError(timeoutError.message);
+            if (onError) {
+              onError(timeoutError);
+            }
+          } else {
+            const errorObj = { type: 'network', message: err.message };
+            setError(err.message);
+            if (onError) {
+              onError(errorObj);
+            }
+          }
+        } else {
+          const errorMessage = 'Search failed';
+          setError(errorMessage);
+          if (onError) {
+            onError({ type: 'unknown', message: errorMessage });
+          }
+        }
       } finally {
         setLoading(false);
       }
     };
 
     performSearch();
-  }, [debouncedQuery, setLoading, setError, setMerchants, onSearch]);
+  }, [debouncedQuery, setLoading, setError, setMerchants, onSearch, onError, timeout]);
 
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -371,10 +407,11 @@ export function SearchBar({
         )}
 
         {/* Loading Spinner */}
-        {isLoading && (
+        {(isLoading || externalIsLoading) && (
           <div 
-            data-testid="loading-spinner"
+            data-testid="search-loading"
             className="absolute right-3 top-1/2 -translate-y-1/2"
+            aria-label="Searching..."
           >
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
           </div>

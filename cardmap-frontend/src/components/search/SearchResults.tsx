@@ -4,6 +4,8 @@ import MerchantList from '@/components/merchant/MerchantList';
 import MapContainer from '@/components/map/MapContainer';
 import type { Merchant } from '@/types';
 import { MapIcon, ListBulletIcon, XMarkIcon, FunnelIcon } from '@heroicons/react/24/outline';
+import { SkeletonList } from '../ui/LoadingStates';
+import { NetworkError, TimeoutError, EmptyState } from '../ui/ErrorStates';
 
 interface SearchResultsProps {
   viewMode?: 'list' | 'map';
@@ -11,6 +13,12 @@ interface SearchResultsProps {
   className?: string;
   onMerchantClick?: (merchant: Merchant) => void;
   onRetry?: () => void;
+  onClearFilters?: () => void;
+  merchants?: Merchant[];
+  isLoading?: boolean;
+  error?: { type: string; message?: string; duration?: number };
+  skeletonCount?: number;
+  emptySuggestions?: string[];
 }
 
 /**
@@ -22,13 +30,19 @@ const SearchResults = memo(function SearchResults({
   onViewModeChange,
   className = '',
   onMerchantClick,
-  onRetry
+  onRetry,
+  onClearFilters,
+  merchants: propMerchants,
+  isLoading: propIsLoading,
+  error: propError,
+  skeletonCount = 10,
+  emptySuggestions
 }: SearchResultsProps) {
   // Get state from search store
   const {
-    merchants,
-    isLoading,
-    error,
+    merchants: storeMerchants,
+    isLoading: storeIsLoading,
+    error: storeError,
     viewMode: storeViewMode,
     totalResults,
     page,
@@ -42,6 +56,11 @@ const SearchResults = memo(function SearchResults({
     hasActiveFilters,
     getFilterString
   } = useSearchStore();
+  
+  // Use prop values if provided, otherwise use store values
+  const merchants = propMerchants ?? storeMerchants;
+  const isLoading = propIsLoading ?? storeIsLoading;
+  const error = propError ?? (storeError ? { type: 'network', message: storeError } : null);
 
   // Determine which view mode to use (controlled or from store)
   const currentViewMode = controlledViewMode ?? storeViewMode;
@@ -116,54 +135,80 @@ const SearchResults = memo(function SearchResults({
     </div>
   ), [totalResults, totalPages, page, filterInfo, handleClearFilters]);
 
+  // Loading state with skeleton screens
+  if (isLoading && merchants.length === 0) {
+    return (
+      <div 
+        data-testid="search-results"
+        className={`${className}`}
+      >
+        <SkeletonList count={skeletonCount} />
+      </div>
+    );
+  }
+
   // Error state
   if (error) {
     return (
       <div 
         data-testid="search-results"
-        className={`flex flex-col items-center justify-center h-64 ${className}`}
+        className={`${className}`}
       >
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          {onRetry && (
-            <button
-              onClick={onRetry}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Retry
-            </button>
-          )}
-        </div>
+        {error.type === 'network' && (
+          <NetworkError onRetry={onRetry || (() => {})} />
+        )}
+        {error.type === 'timeout' && (
+          <TimeoutError 
+            duration={error.duration}
+            onRetry={onRetry || (() => {})} 
+          />
+        )}
+        {error.type !== 'network' && error.type !== 'timeout' && (
+          <div className="flex flex-col items-center justify-center h-64">
+            <div className="text-center">
+              <p className="text-red-600 mb-4">{error.message || 'An error occurred'}</p>
+              {onRetry && (
+                <button
+                  onClick={onRetry}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  Retry
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 
   // Empty state
   if (!isLoading && merchants.length === 0) {
+    const clearFiltersAction = onClearFilters || (filterInfo.hasFilters ? handleClearFilters : undefined);
+    
     return (
       <div 
         data-testid="search-results"
-        className={`flex flex-col items-center justify-center h-64 ${className}`}
+        className={`${className}`}
       >
-        <div className="text-center text-gray-500">
-          <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p className="text-lg font-medium mb-2">No results found</p>
-          {filterInfo.hasFilters ? (
-            <p className="text-sm">
-              Try adjusting your filters or search criteria
-            </p>
-          ) : (
-            <p className="text-sm">
-              No merchants available at this time
-            </p>
-          )}
-        </div>
+        <EmptyState
+          message="No results found"
+          suggestions={emptySuggestions || (filterInfo.hasFilters ? [
+            'Try adjusting your filters',
+            'Search for different keywords',
+            'Check your spelling'
+          ] : undefined)}
+          action={clearFiltersAction ? {
+            label: 'Clear filters',
+            onClick: clearFiltersAction
+          } : undefined}
+        />
       </div>
     );
   }
+
+  // Partial loading state (loading more results)
+  // We'll continue showing existing results with a loading indicator in the main view
 
   return (
     <div 
