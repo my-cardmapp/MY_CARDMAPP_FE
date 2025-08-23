@@ -394,6 +394,260 @@ describe('SearchBar', () => {
     });
   });
 
+  describe('Autocomplete Integration', () => {
+    it('should fetch suggestions when typing', async () => {
+      const user = userEvent.setup({ delay: null });
+      
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          suggestions: ['강남역', '강남구청', '강남대로'],
+          correctedQuery: undefined
+        })
+      });
+      
+      render(<SearchBar />);
+      const input = screen.getByRole('searchbox');
+      
+      await user.type(input, '강남');
+      
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/v1/suggestions/search?query=강남'),
+          expect.any(Object)
+        );
+      });
+    });
+
+    it('should show autocomplete dropdown with suggestions', async () => {
+      const user = userEvent.setup({ delay: null });
+      
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          suggestions: ['강남역', '강남구청', '강남대로'],
+          correctedQuery: undefined
+        })
+      });
+      
+      render(<SearchBar />);
+      const input = screen.getByRole('searchbox');
+      
+      await user.type(input, '강남');
+      
+      await waitFor(() => {
+        const dropdown = screen.getByTestId('autocomplete-dropdown');
+        expect(dropdown).toBeInTheDocument();
+      });
+      
+      // Check suggestions are displayed
+      expect(screen.getByText('강남역')).toBeInTheDocument();
+      expect(screen.getByText('강남구청')).toBeInTheDocument();
+      expect(screen.getByText('강남대로')).toBeInTheDocument();
+    });
+
+    it('should handle keyboard navigation in dropdown', async () => {
+      const user = userEvent.setup({ delay: null });
+      
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          suggestions: ['강남역', '강남구청', '강남대로'],
+          correctedQuery: undefined
+        })
+      });
+      
+      render(<SearchBar />);
+      const input = screen.getByRole('searchbox');
+      
+      await user.type(input, '강남');
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('autocomplete-dropdown')).toBeInTheDocument();
+      });
+      
+      // Navigate down
+      fireEvent.keyDown(input, { key: 'ArrowDown', code: 'ArrowDown' });
+      let options = screen.getAllByRole('option');
+      expect(options[0]).toHaveAttribute('aria-selected', 'true');
+      
+      // Navigate down again
+      fireEvent.keyDown(input, { key: 'ArrowDown', code: 'ArrowDown' });
+      options = screen.getAllByRole('option');
+      expect(options[1]).toHaveAttribute('aria-selected', 'true');
+      
+      // Navigate up
+      fireEvent.keyDown(input, { key: 'ArrowUp', code: 'ArrowUp' });
+      options = screen.getAllByRole('option');
+      expect(options[0]).toHaveAttribute('aria-selected', 'true');
+    });
+
+    it('should select suggestion on Enter key', async () => {
+      const user = userEvent.setup({ delay: null });
+      
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          suggestions: ['강남역', '강남구청', '강남대로'],
+          correctedQuery: undefined
+        })
+      });
+      
+      render(<SearchBar />);
+      const input = screen.getByRole('searchbox');
+      
+      await user.type(input, '강남');
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('autocomplete-dropdown')).toBeInTheDocument();
+      });
+      
+      // Navigate to first suggestion and select
+      fireEvent.keyDown(input, { key: 'ArrowDown', code: 'ArrowDown' });
+      fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
+      
+      // Query should be updated to selected suggestion
+      expect(mockSetQuery).toHaveBeenCalledWith('강남역');
+      
+      // Dropdown should close
+      await waitFor(() => {
+        expect(screen.queryByTestId('autocomplete-dropdown')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should close dropdown on Escape key', async () => {
+      const user = userEvent.setup({ delay: null });
+      
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          suggestions: ['강남역', '강남구청', '강남대로'],
+          correctedQuery: undefined
+        })
+      });
+      
+      render(<SearchBar />);
+      const input = screen.getByRole('searchbox');
+      
+      await user.type(input, '강남');
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('autocomplete-dropdown')).toBeInTheDocument();
+      });
+      
+      // Press Escape
+      fireEvent.keyDown(input, { key: 'Escape', code: 'Escape' });
+      
+      // Dropdown should close but query should remain
+      await waitFor(() => {
+        expect(screen.queryByTestId('autocomplete-dropdown')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should handle suggestion click', async () => {
+      const user = userEvent.setup({ delay: null });
+      
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          suggestions: ['강남역', '강남구청', '강남대로'],
+          correctedQuery: undefined
+        })
+      });
+      
+      render(<SearchBar />);
+      const input = screen.getByRole('searchbox');
+      
+      await user.type(input, '강남');
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('autocomplete-dropdown')).toBeInTheDocument();
+      });
+      
+      // Click on suggestion
+      const suggestion = screen.getByText('강남구청');
+      await user.click(suggestion);
+      
+      // Query should be updated
+      expect(mockSetQuery).toHaveBeenCalledWith('강남구청');
+      
+      // Dropdown should close
+      await waitFor(() => {
+        expect(screen.queryByTestId('autocomplete-dropdown')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should show corrected query suggestion', async () => {
+      const user = userEvent.setup({ delay: null });
+      
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          suggestions: ['스타벅스 강남점', '스타벅스 역삼점'],
+          correctedQuery: '스타벅스'
+        })
+      });
+      
+      render(<SearchBar />);
+      const input = screen.getByRole('searchbox');
+      
+      await user.type(input, '스타법스');
+      
+      await waitFor(() => {
+        const dropdown = screen.getByTestId('autocomplete-dropdown');
+        expect(dropdown).toBeInTheDocument();
+        // Should show corrected query
+        expect(screen.getByText(/스타벅스/)).toBeInTheDocument();
+      });
+    });
+
+    it('should not show dropdown when no suggestions', async () => {
+      const user = userEvent.setup({ delay: null });
+      
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          suggestions: [],
+          correctedQuery: undefined
+        })
+      });
+      
+      render(<SearchBar />);
+      const input = screen.getByRole('searchbox');
+      
+      await user.type(input, 'zzzzzz');
+      
+      // Wait a bit to ensure no dropdown appears
+      await waitFor(() => {
+        expect(screen.queryByTestId('autocomplete-dropdown')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should debounce suggestion fetching', async () => {
+      const user = userEvent.setup({ delay: null });
+      
+      render(<SearchBar />);
+      const input = screen.getByRole('searchbox');
+      
+      // Type quickly
+      await user.type(input, 'ㄱ');
+      await user.type(input, 'ㅏ');
+      await user.type(input, 'ㅇ');
+      
+      // Should not make multiple calls immediately
+      expect(mockFetch).not.toHaveBeenCalled();
+      
+      // Mock debounce returning final value
+      (useDebounce as any).mockReturnValue('강');
+      
+      // Force re-render
+      await waitFor(() => {
+        // Should make single call after debounce
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+      });
+    });
+  });
+
   describe('Edge Cases', () => {
     it('should handle rapid input changes', async () => {
       const user = userEvent.setup({ delay: null });

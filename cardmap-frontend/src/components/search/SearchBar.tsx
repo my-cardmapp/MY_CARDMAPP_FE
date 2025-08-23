@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useCallback, useRef, KeyboardEvent } from 'react';
+import React, { useEffect, useCallback, useRef, KeyboardEvent, useState } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useSearchStore } from '@/stores/searchStore';
+import { AutocompleteDropdown } from './AutocompleteDropdown';
 
 export interface SearchBarProps {
   placeholder?: string;
@@ -32,6 +33,60 @@ export function SearchBar({
   const inputRef = useRef<HTMLInputElement>(null);
   const debouncedQuery = useDebounce(query, 300);
   const lastSearchedQuery = useRef<string>('');
+  
+  // Autocomplete state
+  const [suggestions, setLocalSuggestions] = useState<string[]>([]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [suggestionsError, setSuggestionsError] = useState<string | null>(null);
+  const [correctedQuery, setCorrectedQuery] = useState<string | undefined>(undefined);
+
+  // Fetch suggestions when query changes
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (!debouncedQuery || debouncedQuery.length < 1) {
+        setLocalSuggestions([]);
+        setIsDropdownOpen(false);
+        return;
+      }
+
+      setSuggestionsLoading(true);
+      setSuggestionsError(null);
+
+      try {
+        const response = await fetch(
+          `/api/v1/suggestions/search?query=${encodeURIComponent(debouncedQuery)}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch suggestions: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        setLocalSuggestions(data.suggestions || []);
+        setCorrectedQuery(data.correctedQuery);
+        setSuggestions(data.suggestions || []); // Update store
+        setIsDropdownOpen(data.suggestions && data.suggestions.length > 0);
+        setSelectedIndex(-1);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch suggestions';
+        setSuggestionsError(errorMessage);
+        setLocalSuggestions([]);
+        setIsDropdownOpen(false);
+      } finally {
+        setSuggestionsLoading(false);
+      }
+    };
+
+    fetchSuggestions();
+  }, [debouncedQuery, setSuggestions]);
 
   // Execute search when debounced query changes
   useEffect(() => {
@@ -93,16 +148,62 @@ export function SearchBar({
   const handleClear = () => {
     clearQuery();
     lastSearchedQuery.current = '';
+    setLocalSuggestions([]);
+    setIsDropdownOpen(false);
     inputRef.current?.focus();
+  };
+
+  // Handle suggestion selection
+  const handleSelectSuggestion = (suggestion: string) => {
+    setQuery(suggestion);
+    setIsDropdownOpen(false);
+    setSelectedIndex(-1);
+    lastSearchedQuery.current = '';
+    // Trigger immediate search for the selected suggestion
+    performImmediateSearchForQuery(suggestion);
+  };
+
+  // Handle dropdown close
+  const handleCloseDropdown = () => {
+    setIsDropdownOpen(false);
+    setSelectedIndex(-1);
   };
 
   // Handle keyboard events
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    // Handle dropdown navigation
+    if (isDropdownOpen && suggestions.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedIndex(prev => 
+          prev < suggestions.length - 1 ? prev + 1 : prev
+        );
+        return;
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedIndex(prev => prev > -1 ? prev - 1 : -1);
+        return;
+      } else if (e.key === 'Enter' && selectedIndex >= 0) {
+        e.preventDefault();
+        handleSelectSuggestion(suggestions[selectedIndex]);
+        return;
+      }
+    }
+
+    // Regular keyboard handling
     if (e.key === 'Escape') {
       e.preventDefault();
-      handleClear();
+      if (isDropdownOpen) {
+        handleCloseDropdown();
+      } else {
+        handleClear();
+      }
     } else if (e.key === 'Enter') {
       e.preventDefault();
+      // Close dropdown if open
+      if (isDropdownOpen) {
+        setIsDropdownOpen(false);
+      }
       // Trigger immediate search by setting last searched to empty
       if (query && query !== lastSearchedQuery.current) {
         lastSearchedQuery.current = '';
@@ -148,6 +249,43 @@ export function SearchBar({
     }
   };
 
+  // Perform immediate search for a specific query
+  const performImmediateSearchForQuery = async (searchQuery: string) => {
+    if (!searchQuery) return;
+
+    lastSearchedQuery.current = searchQuery;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `/api/v1/merchants/search?query=${encodeURIComponent(searchQuery)}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Search failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setMerchants(data.content || []);
+      
+      if (onSearch) {
+        onSearch(searchQuery);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Search failed';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div 
       data-testid="search-bar-container" 
@@ -184,6 +322,14 @@ export function SearchBar({
           type="search"
           role="searchbox"
           aria-label="Search merchants"
+          aria-autocomplete="list"
+          aria-controls={isDropdownOpen ? "autocomplete-listbox" : undefined}
+          aria-expanded={isDropdownOpen}
+          aria-activedescendant={
+            isDropdownOpen && selectedIndex >= 0
+              ? `autocomplete-option-${selectedIndex}`
+              : undefined
+          }
           placeholder={placeholder}
           value={query}
           onChange={handleInputChange}
@@ -199,7 +345,7 @@ export function SearchBar({
         />
 
         {/* Clear Button */}
-        {query && (
+        {query && !isLoading && (
           <button
             data-testid="clear-button"
             type="button"
@@ -233,6 +379,18 @@ export function SearchBar({
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
           </div>
         )}
+
+        {/* Autocomplete Dropdown */}
+        <AutocompleteDropdown
+          suggestions={suggestions}
+          isOpen={isDropdownOpen}
+          selectedIndex={selectedIndex}
+          onSelect={handleSelectSuggestion}
+          onClose={handleCloseDropdown}
+          query={query}
+          loading={suggestionsLoading}
+          error={suggestionsError || undefined}
+        />
       </div>
 
       {/* Loading Text (for screen readers) */}
