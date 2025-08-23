@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import type { Merchant } from '@/types/merchant';
+import type { Merchant } from '@/types';
 import { CARD_STYLES } from '@/constants/cardStyles';
 import { LazyImage } from '@/components/common/LazyImage';
 import { useLazyLoad } from '@/hooks/useLazyLoad';

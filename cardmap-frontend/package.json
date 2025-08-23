@@ -23,6 +23,7 @@
     "playwright:install-deps": "playwright install-deps"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@tanstack/react-virtual": "^3.13.12",
     "clsx": "^2.1.1",
     "lucide-react": "^0.539.0",

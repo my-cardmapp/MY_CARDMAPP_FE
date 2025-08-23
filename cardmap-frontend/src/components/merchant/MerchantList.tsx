@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useCallback, memo } from 'react';
 import { useVirtualScroll } from '@/hooks/useVirtualScroll';
 import MerchantListItem from './MerchantListItem';
-import type { Merchant } from '@/types/merchant';
+import type { Merchant } from '@/types';
 
 interface MerchantListProps {
   merchants: Merchant[];
