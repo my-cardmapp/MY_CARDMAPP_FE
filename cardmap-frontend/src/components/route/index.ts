@@ -1,1 +1,2 @@
-export { RoutePlanner } from './RoutePlanner';
+export { WaypointList } from './WaypointList';
+export type { Waypoint } from './WaypointList';
