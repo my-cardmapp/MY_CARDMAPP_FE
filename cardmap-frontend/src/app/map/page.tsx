@@ -7,9 +7,11 @@ import MapContainer from '@/components/map/MapContainer'
 import MerchantList from '@/components/merchant/MerchantList'
 import { SearchBar } from '@/components/search/SearchBar'
 import { RoutePlanner } from '@/components/route/RoutePlanner'
+import { RouteLayer } from '@/components/map/RouteLayer'
 import { sampleMerchants as MOCK_MERCHANTS } from '@/data/sampleMerchants'
 import type { Merchant } from '@/types/merchant'
 import type { MapBounds } from '@/hooks/useMapBounds'
+import type { Route, Location } from '@/types'
 
 // 전체 카드 타입 정의
 const ALL_CARD_TYPES = ['CHILD_MEAL', 'CULTURE_NURI', 'LOCAL_CURRENCY'] as const
@@ -24,6 +26,12 @@ export default function MapPage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [showRoutePlanner, setShowRoutePlanner] = useState(false)
+  
+  // Route visualization state
+  const [currentRoute, setCurrentRoute] = useState<Route | null>(null)
+  const [routeOrigin, setRouteOrigin] = useState<Location | null>(null)
+  const [routeDestination, setRouteDestination] = useState<Location | null>(null)
+  const [routeWaypoints, setRouteWaypoints] = useState<Location[]>([])
 
   console.log('MapPage - activeCardTypes state:', activeCardTypes)
 
@@ -113,6 +121,29 @@ export default function MapPage() {
 
   const handleMapReady = useCallback((map: naver.maps.Map) => {
     console.log('Map is ready:', map)
+  }, [])
+  
+  // Handle route calculation from RoutePlanner
+  const handleRouteCalculated = useCallback((
+    route: Route,
+    origin: Location,
+    destination: Location,
+    waypoints?: Location[]
+  ) => {
+    console.log('Route calculated:', route)
+    setCurrentRoute(route)
+    setRouteOrigin(origin)
+    setRouteDestination(destination)
+    setRouteWaypoints(waypoints || [])
+  }, [])
+  
+  // Handle route clear
+  const handleRouteClear = useCallback(() => {
+    console.log('Route cleared')
+    setCurrentRoute(null)
+    setRouteOrigin(null)
+    setRouteDestination(null)
+    setRouteWaypoints([])
   }, [])
 
   // 필터링된 가맹점 목록
@@ -261,7 +292,10 @@ export default function MapPage() {
                       <h3 className="font-semibold text-gray-900">경로 계획</h3>
                     </div>
                     <div className="p-4">
-                      <RoutePlanner />
+                      <RoutePlanner 
+                        onRouteCalculated={handleRouteCalculated}
+                        onRouteClear={handleRouteClear}
+                      />
                     </div>
                   </div>
                 ) : (
@@ -313,6 +347,19 @@ export default function MapPage() {
               activeCardTypes={activeCardTypes}
               onMarkerClick={handleMarkerClick}
               onMapReady={handleMapReady}
+            />
+            
+            {/* Route visualization layer */}
+            <RouteLayer
+              route={currentRoute}
+              origin={routeOrigin}
+              destination={routeDestination}
+              waypoints={routeWaypoints}
+              routeStyle={{
+                strokeColor: '#FF0000',
+                strokeWeight: 5,
+                strokeOpacity: 0.8,
+              }}
             />
           
           {/* 선택된 가맹점 정보 */}

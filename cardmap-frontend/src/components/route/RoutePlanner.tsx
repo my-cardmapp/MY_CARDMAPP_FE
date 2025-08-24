@@ -16,7 +16,17 @@ interface LocationData {
   };
 }
 
-export function RoutePlanner() {
+interface RoutePlannerProps {
+  onRouteCalculated?: (
+    route: Route,
+    origin: LocationData,
+    destination: LocationData,
+    waypoints?: LocationData[]
+  ) => void;
+  onRouteClear?: () => void;
+}
+
+export function RoutePlanner({ onRouteCalculated, onRouteClear }: RoutePlannerProps) {
   // State for inputs
   const [originQuery, setOriginQuery] = useState('');
   const [destinationQuery, setDestinationQuery] = useState('');
@@ -75,8 +85,15 @@ export function RoutePlanner() {
       
       const response = await calculateRoute(request);
       
-      if (response.data?.routes) {
+      if (response.data?.routes && response.data.routes.length > 0) {
         setRoutes(response.data.routes);
+        // Call the callback with the first route
+        onRouteCalculated?.(
+          response.data.routes[0],
+          selectedOrigin,
+          selectedDestination,
+          [] // TODO: Add waypoint support
+        );
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '경로를 계산할 수 없습니다');
@@ -84,7 +101,7 @@ export function RoutePlanner() {
     } finally {
       setIsCalculating(false);
     }
-  }, [selectedOrigin, selectedDestination, mode, calculateRoute]);
+  }, [selectedOrigin, selectedDestination, mode, calculateRoute, onRouteCalculated]);
   
   // Clear form
   const handleClear = useCallback(() => {
@@ -95,7 +112,8 @@ export function RoutePlanner() {
     setRoutes([]);
     setError(null);
     setMode('walking');
-  }, []);
+    onRouteClear?.();
+  }, [onRouteClear]);
   
   // Format distance
   const formatDistance = (meters: number): string => {
