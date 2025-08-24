@@ -1,8 +1,11 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { AutocompleteDropdown } from '@/components/search/AutocompleteDropdown';
 import { useRouteApi } from '@/hooks/useRouteApi';
+import { useRouteSharing } from '@/hooks/useRouteSharing';
+import { ShareRouteButton } from './ShareRouteButton';
+import { SavedRoutesList } from './SavedRoutesList';
 import { RouteMode, RouteCalculateRequest, Route } from '@/types/route';
 import { Merchant } from '@/types/merchant';
 
@@ -24,23 +27,27 @@ interface RoutePlannerProps {
     waypoints?: LocationData[]
   ) => void;
   onRouteClear?: () => void;
+  showSavedRoutes?: boolean;
 }
 
-export function RoutePlanner({ onRouteCalculated, onRouteClear }: RoutePlannerProps) {
+export function RoutePlanner({ onRouteCalculated, onRouteClear, showSavedRoutes = true }: RoutePlannerProps) {
   // State for inputs
   const [originQuery, setOriginQuery] = useState('');
   const [destinationQuery, setDestinationQuery] = useState('');
   const [selectedOrigin, setSelectedOrigin] = useState<LocationData | null>(null);
   const [selectedDestination, setSelectedDestination] = useState<LocationData | null>(null);
   const [mode, setMode] = useState<RouteMode>('walking');
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [routeName, setRouteName] = useState('');
   
   // State for results
   const [routes, setRoutes] = useState<Route[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // API hook
+  // Hooks
   const { calculateRoute } = useRouteApi();
+  const { saveRoute, addToHistory, initialRouteData } = useRouteSharing();
   
   // Handle location selection
   const handleOriginSelect = useCallback((item: Merchant | LocationData) => {
@@ -87,6 +94,15 @@ export function RoutePlanner({ onRouteCalculated, onRouteClear }: RoutePlannerPr
       
       if (response.data?.routes && response.data.routes.length > 0) {
         setRoutes(response.data.routes);
+        
+        // Add to history
+        addToHistory({
+          route: response.data.routes[0],
+          origin: selectedOrigin,
+          destination: selectedDestination,
+          mode,
+        });
+        
         // Call the callback with the first route
         onRouteCalculated?.(
           response.data.routes[0],
@@ -101,7 +117,7 @@ export function RoutePlanner({ onRouteCalculated, onRouteClear }: RoutePlannerPr
     } finally {
       setIsCalculating(false);
     }
-  }, [selectedOrigin, selectedDestination, mode, calculateRoute, onRouteCalculated]);
+  }, [selectedOrigin, selectedDestination, mode, calculateRoute, onRouteCalculated, addToHistory]);
   
   // Clear form
   const handleClear = useCallback(() => {
@@ -148,6 +164,69 @@ export function RoutePlanner({ onRouteCalculated, onRouteClear }: RoutePlannerPr
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('ko-KR').format(amount) + '원';
   };
+  
+  // Save current route
+  const handleSaveRoute = useCallback(() => {
+    if (!routes.length || !selectedOrigin || !selectedDestination) return;
+    
+    saveRoute({
+      name: routeName || `${selectedOrigin.name} → ${selectedDestination.name}`,
+      route: routes[0],
+      origin: selectedOrigin,
+      destination: selectedDestination,
+      mode,
+    });
+    
+    setShowSaveDialog(false);
+    setRouteName('');
+  }, [routes, selectedOrigin, selectedDestination, mode, routeName, saveRoute]);
+  
+  // Load saved route
+  const handleLoadRoute = useCallback((
+    origin: LocationData,
+    destination: LocationData,
+    waypoints?: LocationData[],
+    routeMode?: RouteMode
+  ) => {
+    setSelectedOrigin(origin);
+    setSelectedDestination(destination);
+    setOriginQuery(origin.name);
+    setDestinationQuery(destination.name);
+    if (routeMode) {
+      setMode(routeMode);
+    }
+    // TODO: Handle waypoints when supported
+  }, []);
+  
+  // Load from URL on mount
+  useEffect(() => {
+    if (initialRouteData) {
+      const { origin, destination, waypoints, mode: urlMode } = initialRouteData;
+      
+      // Create LocationData from parsed URL data
+      const originData: LocationData = {
+        id: Date.now(),
+        name: origin.name,
+        address: '',
+        location: { lat: origin.lat, lng: origin.lng },
+      };
+      
+      const destData: LocationData = {
+        id: Date.now() + 1,
+        name: destination.name,
+        address: '',
+        location: { lat: destination.lat, lng: destination.lng },
+      };
+      
+      handleLoadRoute(originData, destData, undefined, urlMode);
+      
+      // Auto-calculate route after loading from URL
+      setTimeout(() => {
+        const button = document.querySelector('[data-testid="calculate-route-button"]') as HTMLButtonElement;
+        button?.click();
+      }, 500);
+    }
+  }, [initialRouteData, handleLoadRoute]);
   
   const isCalculateDisabled = !selectedOrigin || !selectedDestination || isCalculating;
   
@@ -226,6 +305,7 @@ export function RoutePlanner({ onRouteCalculated, onRouteClear }: RoutePlannerPr
           <button
             onClick={handleCalculateRoute}
             disabled={isCalculateDisabled}
+            data-testid="calculate-route-button"
             className={`
               flex-1 px-4 py-2 rounded-lg font-medium transition-colors
               ${isCalculateDisabled 
@@ -236,6 +316,24 @@ export function RoutePlanner({ onRouteCalculated, onRouteClear }: RoutePlannerPr
           >
             {isCalculating ? '계산 중...' : '경로 계산'}
           </button>
+          {routes.length > 0 && (
+            <>
+              <ShareRouteButton
+                route={routes[0]}
+                origin={selectedOrigin!}
+                destination={selectedDestination!}
+                mode={mode}
+                className="flex-shrink-0"
+              />
+              <button
+                onClick={() => setShowSaveDialog(true)}
+                className="px-4 py-2 rounded-lg font-medium bg-green-500 text-white hover:bg-green-600 transition-colors"
+                title="경로 저장"
+              >
+                💾 저장
+              </button>
+            </>
+          )}
           {(routes.length > 0 || error) && (
             <button
               onClick={handleClear}
@@ -245,6 +343,40 @@ export function RoutePlanner({ onRouteCalculated, onRouteClear }: RoutePlannerPr
             </button>
           )}
         </div>
+        
+        {/* Save Dialog */}
+        {showSaveDialog && (
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <input
+                type="text"
+                value={routeName}
+                onChange={(e) => setRouteName(e.target.value)}
+                placeholder="경로 이름 (선택사항)"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                autoFocus
+              />
+              <button
+                onClick={handleSaveRoute}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                저장
+              </button>
+              <button
+                onClick={() => {
+                  setShowSaveDialog(false);
+                  setRouteName('');
+                }}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                취소
+              </button>
+            </div>
+            <p className="text-sm text-gray-600">
+              이름을 입력하지 않으면 자동으로 생성됩니다
+            </p>
+          </div>
+        )}
         
         {/* Error Display */}
         {error && (
@@ -300,6 +432,16 @@ export function RoutePlanner({ onRouteCalculated, onRouteClear }: RoutePlannerPr
               )}
             </div>
           ))}
+        </div>
+      )}
+      
+      {/* Saved Routes List */}
+      {showSavedRoutes && (
+        <div className="mt-4">
+          <SavedRoutesList
+            onRouteLoad={handleLoadRoute}
+            showHistory={true}
+          />
         </div>
       )}
     </div>
