@@ -6,6 +6,7 @@ import { MapProvider } from '@/contexts/MapContext'
 import MapContainer from '@/components/map/MapContainer'
 import MerchantList from '@/components/merchant/MerchantList'
 import { SearchBar } from '@/components/search/SearchBar'
+import { RoutePlanner } from '@/components/route/RoutePlanner'
 import { sampleMerchants as MOCK_MERCHANTS } from '@/data/sampleMerchants'
 import type { Merchant } from '@/types/merchant'
 import type { MapBounds } from '@/hooks/useMapBounds'
@@ -22,6 +23,7 @@ export default function MapPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
+  const [showRoutePlanner, setShowRoutePlanner] = useState(false)
 
   console.log('MapPage - activeCardTypes state:', activeCardTypes)
 
@@ -147,8 +149,23 @@ export default function MapPage() {
                 </button>
               </div>
               
-              {/* 카드 타입 필터 */}
+              {/* 카드 타입 필터 및 경로 계획 버튼 */}
               <div className="flex gap-2 items-center">
+                {/* 경로 계획 버튼 */}
+                <button
+                  onClick={() => setShowRoutePlanner(!showRoutePlanner)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                    showRoutePlanner 
+                      ? 'bg-blue-500 text-white' 
+                      : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                  }`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                  </svg>
+                  경로 계획
+                </button>
+                
                 {/* 활성 필터 수 뱃지 */}
                 <div className="flex items-center gap-1 mr-2 pr-2 border-r border-gray-300">
                   <span 
@@ -233,43 +250,58 @@ export default function MapPage() {
         </header>
         
         <main className="flex-1 flex relative">
-          {/* 사이드바 - 가맹점 목록 */}
+          {/* 사이드바 - 가맹점 목록 또는 경로 계획 */}
           <div className={`transition-all duration-300 ${sidebarOpen ? 'w-96' : 'w-0'} overflow-hidden border-r border-gray-200 bg-white`}>
             {sidebarOpen && (
               <div className="h-full flex flex-col">
-                {/* Search Bar */}
-                <div className="px-4 py-3 border-b border-gray-200">
-                  <SearchBar 
-                    placeholder="가맹점 검색..."
-                    className="mb-3"
-                  />
-                </div>
-                
-                {/* 목록 헤더 */}
-                <div className="px-4 py-3 border-b border-gray-200">
-                  <h3 className="font-semibold text-gray-900">
-                    검색 결과: {filteredMerchants.length}개
-                  </h3>
-                  {activeCardTypes.length > 0 && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      필터 적용됨
-                    </p>
-                  )}
-                </div>
-                
-                {/* 가맹점 목록 */}
-                <div className="flex-1 overflow-hidden">
-                  <MerchantList
-                    merchants={filteredMerchants}
-                    onItemClick={handleMarkerClick}
-                    onLoadMore={handleLoadMore}
-                    isLoading={false}
-                    isLoadingMore={isLoadingMore}
-                    hasMore={hasMore}
-                    selectedMerchantId={selectedMerchant?.id}
-                    filterKey={activeCardTypes.join(',')}
-                  />
-                </div>
+                {showRoutePlanner ? (
+                  /* 경로 계획 패널 */
+                  <div className="h-full overflow-auto">
+                    <div className="px-4 py-3 border-b border-gray-200">
+                      <h3 className="font-semibold text-gray-900">경로 계획</h3>
+                    </div>
+                    <div className="p-4">
+                      <RoutePlanner />
+                    </div>
+                  </div>
+                ) : (
+                  /* 가맹점 목록 */
+                  <>
+                    {/* Search Bar */}
+                    <div className="px-4 py-3 border-b border-gray-200">
+                      <SearchBar 
+                        placeholder="가맹점 검색..."
+                        className="mb-3"
+                      />
+                    </div>
+                    
+                    {/* 목록 헤더 */}
+                    <div className="px-4 py-3 border-b border-gray-200">
+                      <h3 className="font-semibold text-gray-900">
+                        검색 결과: {filteredMerchants.length}개
+                      </h3>
+                      {activeCardTypes.length > 0 && (
+                        <p className="text-sm text-gray-600 mt-1">
+                          필터 적용됨
+                        </p>
+                      )}
+                    </div>
+                    
+                    {/* 가맹점 목록 */}
+                    <div className="flex-1 overflow-hidden">
+                      <MerchantList
+                        merchants={filteredMerchants}
+                        onItemClick={handleMarkerClick}
+                        onLoadMore={handleLoadMore}
+                        isLoading={false}
+                        isLoadingMore={isLoadingMore}
+                        hasMore={hasMore}
+                        selectedMerchantId={selectedMerchant?.id}
+                        filterKey={activeCardTypes.join(',')}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
