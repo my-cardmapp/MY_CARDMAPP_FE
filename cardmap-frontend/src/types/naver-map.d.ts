@@ -1,12 +1,15 @@
 declare namespace naver {
   namespace maps {
-    // KVO base class
-    class KVO {
+    // KVO base class with generics
+    class KVO<T = any> {
       addListener(eventName: string, listener: Function): any
       removeListener(listeners: any): void
+      get<K extends keyof T>(key: K): T[K]
       get(key: string): any
+      set<K extends keyof T>(key: K, value: T[K]): void
       set(key: string, value: any): void
-      setValues(properties: any): void
+      setValues(properties: Partial<T>): void
+      bindTo<K extends keyof T>(key: K, target: KVO, targetKey?: string): void
       bindTo(key: string, target: KVO, targetKey?: string): void
       unbind(key: string): void
       unbindAll(): void
@@ -26,7 +29,7 @@ declare namespace naver {
       setAt(index: number, element: T): void
     }
 
-    class Map {
+    class Map extends KVO {
       constructor(element: HTMLElement | string, options: MapOptions)
       setCenter(latlng: LatLng | LatLngLiteral): void
       setZoom(zoom: number): void
@@ -35,12 +38,36 @@ declare namespace naver {
       destroy(): void
       getElement(): HTMLElement
       controls: { [key: number]: KVOArray<CustomControl> }
+      
+      // Extended methods
+      getBounds(): LatLngBounds
+      fitBounds(bounds: LatLngBounds, options?: FitBoundsOptions): void
+      panTo(latlng: LatLng | LatLngLiteral, options?: TransitionOptions): void
+      panBy(x: number, y: number): void
+      getProjection(): MapSystemProjection
+      setOptions(options: Partial<MapOptions>): void
+      refresh(): void
+      setMapTypeId(mapTypeId: string | MapTypeId): void
+      getMapTypeId(): string
+      setTilt(tilt: number): void
+      getTilt(): number
+      setHeading(heading: number): void
+      getHeading(): number
+      
+      // Event methods
+      addListener(eventName: string, handler: Function): MapEventListener
+      removeListener(listener: MapEventListener): void
+      trigger(eventName: string, ...args: any[]): void
     }
 
     class LatLng {
       constructor(lat: number, lng: number)
       lat(): number
       lng(): number
+      equals(other: LatLng | LatLngLiteral): boolean
+      toString(): string
+      toPoint(): Point
+      destinationPoint(angle: number, distance: number): LatLng
     }
 
     interface LatLngLiteral {
@@ -48,20 +75,66 @@ declare namespace naver {
       lng: number
     }
 
+    // LatLng Bounds for geographical boundaries
+    class LatLngBounds {
+      constructor(sw: LatLng | LatLngLiteral, ne: LatLng | LatLngLiteral)
+      getNorthEast(): LatLng
+      getSouthWest(): LatLng
+      getCenter(): LatLng
+      contains(latlng: LatLng | LatLngLiteral): boolean
+      extend(latlng: LatLng | LatLngLiteral): LatLngBounds
+      equals(bounds: LatLngBounds): boolean
+      isEmpty(): boolean
+      union(bounds: LatLngBounds): LatLngBounds
+    }
+
+    // Pixel bounds
+    class Bounds {
+      constructor(min: Point, max: Point)
+      getMin(): Point
+      getMax(): Point
+      getCenter(): Point
+      extend(point: Point): Bounds
+      contains(point: Point): boolean
+    }
+
     interface MapOptions {
       center: LatLng | LatLngLiteral
       zoom: number
-      mapTypeId?: string
+      mapTypeId?: string | MapTypeId
       mapTypeControl?: boolean
       zoomControl?: boolean
       zoomControlOptions?: ZoomControlOptions
       scaleControl?: boolean
+      scaleControlOptions?: ScaleControlOptions
       logoControl?: boolean
+      logoControlOptions?: LogoControlOptions
       mapDataControl?: boolean
+      mapDataControlOptions?: MapDataControlOptions
+      mapTypeControlOptions?: MapTypeControlOptions
+      
+      // Extended options
+      minZoom?: number
+      maxZoom?: number
+      restriction?: LatLngBounds
+      tilt?: number
+      heading?: number
+      background?: string
+      disableKineticPan?: boolean
+      mapTypes?: MapTypeRegistry
+      draggable?: boolean
+      pinchZoom?: boolean
+      scrollWheel?: boolean
+      disableDoubleClickZoom?: boolean
+      disableDoubleTapZoom?: boolean
+      disableTwoFingerTapZoom?: boolean
+      keyboardShortcuts?: boolean
     }
 
     interface ZoomControlOptions {
-      position: number
+      position?: number
+      style?: ZoomControlStyle
+      legendDisabled?: boolean
     }
 
     // Position constants
@@ -125,10 +198,23 @@ declare namespace naver {
 
     class Size {
       constructor(width: number, height: number)
+      width: number
+      height: number
+      equals(other: Size): boolean
+      toString(): string
     }
 
     class Point {
       constructor(x: number, y: number)
+      x: number
+      y: number
+      equals(other: Point): boolean
+      toString(): string
+      add(point: Point): Point
+      sub(point: Point): Point
+      mul(scale: number): Point
+      div(scale: number): Point
+      distanceTo(point: Point): number
     }
 
     enum SymbolPath {
@@ -318,6 +404,59 @@ declare namespace naver {
 
     interface LogoControlOptions {
       position?: number
+    }
+
+    interface MapDataControlOptions {
+      position?: number
+    }
+
+    interface MapTypeControlOptions {
+      position?: number
+      style?: MapTypeControlStyle
+      mapTypeIds?: string[] | MapTypeId[]
+    }
+
+    enum MapTypeControlStyle {
+      BUTTON = 0,
+      DROPDOWN = 1,
+    }
+
+    // Map Type Registry for custom map types
+    class MapTypeRegistry {
+      set(key: string, value: MapType): void
+      get(key: string): MapType | null
+    }
+
+    interface MapType {
+      name: string
+      minZoom?: number
+      maxZoom?: number
+      projection?: any
+      getTileUrl?(x: number, y: number, z: number): string
+    }
+
+    // Map Type IDs
+    const MapTypeId: {
+      NORMAL: string
+      TERRAIN: string
+      SATELLITE: string
+      HYBRID: string
+    }
+
+    // Transition Options for animations
+    interface TransitionOptions {
+      duration?: number
+      easing?: string
+      callback?: () => void
+    }
+
+    // Fit Bounds Options
+    interface FitBoundsOptions {
+      top?: number
+      right?: number
+      bottom?: number
+      left?: number
+      maxZoom?: number
     }
   }
 }
