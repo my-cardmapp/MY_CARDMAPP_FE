@@ -154,12 +154,46 @@ declare namespace naver {
       BOTTOM_RIGHT: 12
     }
 
-    class Marker {
+    // Animation enumeration
+    const Animation: {
+      BOUNCE: 1
+      DROP: 2
+    }
+
+    type Animation = 1 | 2
+
+    // Marker shape types
+    interface MarkerShape {
+      coords: number[]
+      type: 'rect' | 'circle' | 'poly'
+    }
+
+    class Marker extends OverlayView {
       constructor(options: MarkerOptions)
-      setMap(map: Map | null): void
       setPosition(position: LatLng | LatLngLiteral): void
       getPosition(): LatLng
       setIcon(icon: ImageIcon | SymbolIcon | HtmlIcon): void
+      getIcon(): ImageIcon | SymbolIcon | HtmlIcon
+      setAnimation(animation: Animation | null): void
+      getAnimation(): Animation | null
+      setClickable(clickable: boolean): void
+      getClickable(): boolean
+      setCursor(cursor: string): void
+      getCursor(): string
+      setDraggable(draggable: boolean): void
+      getDraggable(): boolean
+      getDrawingRect(): Bounds
+      setOptions(options: Partial<MarkerOptions>): void
+      setShape(shape: MarkerShape): void
+      getShape(): MarkerShape
+      setTitle(title: string): void
+      getTitle(): string
+      setVisible(visible: boolean): void
+      getVisible(): boolean
+      setZIndex(zIndex: number): void
+      getZIndex(): number
+      setOpacity(opacity: number): void
+      getOpacity(): number
     }
 
     interface MarkerOptions {
@@ -168,7 +202,14 @@ declare namespace naver {
       icon?: ImageIcon | SymbolIcon | HtmlIcon
       title?: string
       clickable?: boolean
+      draggable?: boolean
+      cursor?: string
+      shape?: MarkerShape
+      visible?: boolean
       zIndex?: number
+      flat?: boolean
+      opacity?: number
+      animation?: Animation
     }
 
     interface ImageIcon {
@@ -177,6 +218,8 @@ declare namespace naver {
       scaledSize?: Size
       origin?: Point
       anchor?: Point
+      spriteSize?: Size
+      spriteOrigin?: Point
     }
 
     interface SymbolIcon {
@@ -187,6 +230,7 @@ declare namespace naver {
       strokeWeight?: number
       strokeOpacity?: number
       scale?: number
+      rotation?: number
       anchor?: Point
     }
 
@@ -225,11 +269,17 @@ declare namespace naver {
       FORWARD_OPEN_ARROW = 5,
     }
 
-    class InfoWindow {
+    class InfoWindow extends OverlayView {
       constructor(options: InfoWindowOptions)
       open(map: Map, anchor?: Marker | LatLng): void
       close(): void
       setContent(content: string | HTMLElement): void
+      getContent(): string | HTMLElement
+      setPosition(position: LatLng | LatLngLiteral): void
+      getPosition(): LatLng
+      setOptions(options: Partial<InfoWindowOptions>): void
+      setZIndex(zIndex: number): void
+      getZIndex(): number
     }
 
     interface InfoWindowOptions {
@@ -246,17 +296,24 @@ declare namespace naver {
       borderColor?: string  // default: "#333"
       borderWidth?: number  // default: 1
       backgroundColor?: string  // default: "#fff"
+      autoPan?: boolean  // whether to auto pan when opened
+      autoPanMargin?: Size  // margin from map edges when auto panning
     }
 
     class MarkerClustering {
       constructor(options: MarkerClusteringOptions)
       setMap(map: Map | null): void
+      getMap(): Map | null
       addMarker(marker: Marker): void
       addMarkers(markers: Marker[]): void
       removeMarker(marker: Marker): void
       removeMarkers(markers: Marker[]): void
       clearMarkers(): void
       redraw(): void
+      getMarkers(): Marker[]
+      getClusters(): Cluster[]
+      reset(): void
+      setOptions(options: Partial<MarkerClusteringOptions>): void
     }
 
     interface MarkerClusteringOptions {
@@ -269,13 +326,157 @@ declare namespace naver {
       icons?: ClusterIcon[]
       indexGenerator?: number[]
       averageCenter?: boolean
-      stylingFunction?: (clusterMarker: any, count: number) => void
+      stylingFunction?: (clusterMarker: Marker, count: number, members: Marker[]) => void
+      calculator?: (markers: Marker[], numStyles: number) => ClusterResult
+      clusterMarkerClick?: (e: any, cluster: Cluster) => void
     }
 
     interface ClusterIcon {
       url: string
       size: Size
       anchor?: Point
+      textColor?: string
+      textSize?: number
+    }
+
+    interface ClusterResult {
+      text: string
+      index: number
+    }
+
+    interface Cluster {
+      getClusterMarker(): Marker
+      getCenter(): LatLng
+      getSize(): number
+      getMarkers(): Marker[]
+      getBounds(): LatLngBounds
+    }
+
+    // Polyline overlay
+    class Polyline extends OverlayView {
+      constructor(options: PolylineOptions)
+      setPath(path: (LatLng | LatLngLiteral)[]): void
+      getPath(): LatLng[]
+      setOptions(options: Partial<PolylineOptions>): void
+      getDistance(): number
+      getBounds(): LatLngBounds
+    }
+
+    interface PolylineOptions {
+      map?: Map
+      path: (LatLng | LatLngLiteral)[]
+      strokeColor?: string
+      strokeOpacity?: number
+      strokeWeight?: number
+      strokeStyle?: 'solid' | 'shortdash' | 'shortdot' | 'shortdashdot' | 'shortdashdotdot' | 'dot' | 'dash' | 'dashdot' | 'longdash' | 'longdashdot' | 'longdashdotdot'
+      strokeLineCap?: 'butt' | 'round' | 'square'
+      strokeLineJoin?: 'miter' | 'round' | 'bevel'
+      startIcon?: PointingIcon
+      startIconSize?: number
+      endIcon?: PointingIcon
+      endIconSize?: number
+      clickable?: boolean
+      zIndex?: number
+    }
+
+    // Pointing icon enumeration
+    const PointingIcon: {
+      CIRCLE: 'circle'
+      ARROW: 'arrow'
+      OPEN_ARROW: 'openarrow'
+      BLOCK_ARROW: 'blockarrow'
+    }
+
+    type PointingIcon = 'circle' | 'arrow' | 'openarrow' | 'blockarrow'
+
+    // Polygon overlay
+    class Polygon extends OverlayView {
+      constructor(options: PolygonOptions)
+      setPaths(paths: (LatLng | LatLngLiteral)[] | (LatLng | LatLngLiteral)[][]): void
+      getPaths(): LatLng[] | LatLng[][]
+      setOptions(options: Partial<PolygonOptions>): void
+      getArea(): number
+      getBounds(): LatLngBounds
+    }
+
+    interface PolygonOptions {
+      map?: Map
+      paths: (LatLng | LatLngLiteral)[] | (LatLng | LatLngLiteral)[][]
+      fillColor?: string
+      fillOpacity?: number
+      strokeColor?: string
+      strokeOpacity?: number
+      strokeWeight?: number
+      strokeStyle?: string
+      strokeLineCap?: string
+      strokeLineJoin?: string
+      clickable?: boolean
+      zIndex?: number
+    }
+
+    // Circle overlay
+    class Circle extends OverlayView {
+      constructor(options: CircleOptions)
+      setCenter(center: LatLng | LatLngLiteral): void
+      getCenter(): LatLng
+      setRadius(radius: number): void
+      getRadius(): number
+      setOptions(options: Partial<CircleOptions>): void
+      getBounds(): LatLngBounds
+      getArea(): number
+    }
+
+    interface CircleOptions {
+      map?: Map
+      center: LatLng | LatLngLiteral
+      radius: number
+      fillColor?: string
+      fillOpacity?: number
+      strokeColor?: string
+      strokeOpacity?: number
+      strokeWeight?: number
+      strokeStyle?: string
+      clickable?: boolean
+      zIndex?: number
+    }
+
+    // Rectangle overlay
+    class Rectangle extends OverlayView {
+      constructor(options: RectangleOptions)
+      setBounds(bounds: LatLngBounds): void
+      getBounds(): LatLngBounds
+      setOptions(options: Partial<RectangleOptions>): void
+    }
+
+    interface RectangleOptions {
+      map?: Map
+      bounds: LatLngBounds
+      fillColor?: string
+      fillOpacity?: number
+      strokeColor?: string
+      strokeOpacity?: number
+      strokeWeight?: number
+      strokeStyle?: string
+      clickable?: boolean
+      zIndex?: number
+    }
+
+    // Ground overlay
+    class GroundOverlay extends OverlayView {
+      constructor(url: string, bounds: LatLngBounds, options?: GroundOverlayOptions)
+      setUrl(url: string): void
+      getUrl(): string
+      setBounds(bounds: LatLngBounds): void
+      getBounds(): LatLngBounds
+      setOpacity(opacity: number): void
+      getOpacity(): number
+    }
+
+    interface GroundOverlayOptions {
+      map?: Map
+      opacity?: number
+      clickable?: boolean
+      zIndex?: number
     }
 
     // Event types
@@ -350,14 +551,27 @@ declare namespace naver {
     }
 
     // Control classes - OverlayView is the base class
-    class OverlayView extends KVO {
+    abstract class OverlayView extends KVO {
       setMap(map: Map | null): void
       getMap(): Map | null
-      getPanes(): any
+      getPanes(): MapPanes
       getProjection(): MapSystemProjection
       onAdd(): void
       onRemove(): void
       draw(): void
+      setVisible?(visible: boolean): void
+      getVisible?(): boolean
+      setZIndex?(zIndex: number): void
+      getZIndex?(): number
+    }
+
+    // Map Panes for overlay positioning
+    interface MapPanes {
+      mapPane: HTMLElement
+      overlayLayer: HTMLElement
+      markerLayer: HTMLElement
+      overlayImage: HTMLElement
+      floatPane: HTMLElement
     }
 
     class CustomControl extends KVO {
