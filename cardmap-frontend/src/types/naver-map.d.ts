@@ -712,29 +712,298 @@ declare namespace naver {
       geometries: GeoJsonGeometry[]
     }
 
-    // Event types
+    // Base Event types
     interface MapEvent {
+      // Base event interface - all events extend this
+    }
+
+    interface PointerEvent extends MapEvent {
       coord: LatLng
       point: Point
       offset: Point
-      domEvent: MouseEvent
-      overlay: any
+      pointerType: 'mouse' | 'touch' | 'pen'
+      domEvent: MouseEvent | TouchEvent
+      overlay?: any
+      feature?: any
     }
 
-    // Event handling
+    interface DragEvent extends MapEvent {
+      coord: LatLng
+      point: Point
+      offset: Point
+    }
+
+    interface KeyboardEvent extends MapEvent {
+      keyCode: number
+      key: string
+      domEvent: globalThis.KeyboardEvent
+    }
+
+    interface DOMEvent {
+      domEvent: Event
+      element?: HTMLElement
+    }
+
+    // Event Maps for each class
+    interface MapEvents {
+      'idle': MapEvent
+      'tilesloaded': MapEvent
+      'center_changed': MapEvent
+      'zoom_changed': MapEvent
+      'bounds_changed': MapEvent
+      'click': PointerEvent
+      'dblclick': PointerEvent
+      'rightclick': PointerEvent
+      'mousemove': PointerEvent
+      'mouseout': PointerEvent
+      'mouseover': PointerEvent
+      'drag': MapEvent
+      'dragstart': MapEvent
+      'dragend': MapEvent
+      'zoom_start': MapEvent
+      'zoom_end': MapEvent
+      'size_changed': MapEvent
+      'mapType_changed': MapEvent
+      'mapTypeId_changed': MapEvent
+      'projection_changed': MapEvent
+      'panning': MapEvent
+      'resize': MapEvent
+    }
+
+    interface MarkerEvents {
+      'click': PointerEvent
+      'dblclick': PointerEvent
+      'rightclick': PointerEvent
+      'mouseover': PointerEvent
+      'mouseout': PointerEvent
+      'mousedown': PointerEvent
+      'mouseup': PointerEvent
+      'dragstart': DragEvent
+      'drag': DragEvent
+      'dragend': DragEvent
+      'animation_changed': MapEvent
+      'clickable_changed': MapEvent
+      'cursor_changed': MapEvent
+      'draggable_changed': MapEvent
+      'flat_changed': MapEvent
+      'icon_changed': MapEvent
+      'position_changed': MapEvent
+      'shape_changed': MapEvent
+      'title_changed': MapEvent
+      'visible_changed': MapEvent
+      'zIndex_changed': MapEvent
+    }
+
+    interface InfoWindowEvents {
+      'anchorColor_changed': MapEvent
+      'anchorSize_changed': MapEvent
+      'anchorSkew_changed': MapEvent
+      'backgroundColor_changed': MapEvent
+      'borderColor_changed': MapEvent
+      'borderWidth_changed': MapEvent
+      'close': MapEvent
+      'content_changed': MapEvent
+      'disableAnchor_changed': MapEvent
+      'disableAutoPan_changed': MapEvent
+      'maxWidth_changed': MapEvent
+      'open': MapEvent
+      'pixelOffset_changed': MapEvent
+      'position_changed': MapEvent
+      'zIndex_changed': MapEvent
+    }
+
+    interface PolylineEvents {
+      'click': PointerEvent
+      'dblclick': PointerEvent
+      'mousedown': PointerEvent
+      'mouseout': PointerEvent
+      'mouseover': PointerEvent
+      'mouseup': PointerEvent
+      'rightclick': PointerEvent
+      'clickable_changed': MapEvent
+      'path_changed': MapEvent
+      'strokeColor_changed': MapEvent
+      'strokeOpacity_changed': MapEvent
+      'strokeStyle_changed': MapEvent
+      'strokeWeight_changed': MapEvent
+      'visible_changed': MapEvent
+      'zIndex_changed': MapEvent
+    }
+
+    interface PolygonEvents extends PolylineEvents {
+      'fillColor_changed': MapEvent
+      'fillOpacity_changed': MapEvent
+      'paths_changed': MapEvent
+    }
+
+    interface CircleEvents {
+      'center_changed': MapEvent
+      'click': PointerEvent
+      'clickable_changed': MapEvent
+      'dblclick': PointerEvent
+      'fillColor_changed': MapEvent
+      'fillOpacity_changed': MapEvent
+      'mousedown': PointerEvent
+      'mouseout': PointerEvent
+      'mouseover': PointerEvent
+      'mouseup': PointerEvent
+      'radius_changed': MapEvent
+      'rightclick': PointerEvent
+      'strokeColor_changed': MapEvent
+      'strokeOpacity_changed': MapEvent
+      'strokeStyle_changed': MapEvent
+      'strokeWeight_changed': MapEvent
+      'visible_changed': MapEvent
+      'zIndex_changed': MapEvent
+    }
+
+    interface RectangleEvents extends CircleEvents {
+      'bounds_changed': MapEvent
+    }
+
+    interface EllipseEvents extends RectangleEvents {}
+
+    interface GroundOverlayEvents {
+      'click': PointerEvent
+      'dblclick': PointerEvent
+      'opacity_changed': MapEvent
+    }
+
+    // Event Target types
+    type EventTarget = Map | Marker | InfoWindow | Polyline | Polygon | Circle | Rectangle | Ellipse | GroundOverlay
+
+    // Event Map helper type
+    type EventMap<T> = 
+      T extends Map ? MapEvents :
+      T extends Marker ? MarkerEvents :
+      T extends InfoWindow ? InfoWindowEvents :
+      T extends Polyline ? PolylineEvents :
+      T extends Polygon ? PolygonEvents :
+      T extends Circle ? CircleEvents :
+      T extends Rectangle ? RectangleEvents :
+      T extends Ellipse ? EllipseEvents :
+      T extends GroundOverlay ? GroundOverlayEvents :
+      never
+
+    // Event Listener types
+    interface MapEventListener {
+      eventName: string
+      listener: Function
+      target: any
+      remove(): void
+    }
+
+    interface DOMEventListener {
+      eventName: string
+      listener: Function
+      element: HTMLElement
+      remove(): void
+    }
+
+    // Event handling with generics
     class Event {
+      /**
+       * Adds an event listener to the specified instance
+       * @param instance The target object to add the listener to
+       * @param eventName The name of the event to listen for
+       * @param handler The event handler function
+       * @returns A MapEventListener object that can be used to remove the listener
+       */
+      static addListener<T extends EventTarget, K extends keyof EventMap<T>>(
+        instance: T,
+        eventName: K,
+        handler: (e: EventMap<T>[K]) => void
+      ): MapEventListener
+      
+      // Overload for custom events
       static addListener(
         instance: any,
         eventName: string,
         handler: (e?: any) => void
       ): MapEventListener
-      static removeListener(listener: MapEventListener): void
-    }
 
-    interface MapEventListener {
-      eventName: string
-      listener: Function
-      target: any
+      /**
+       * Adds a DOM event listener to the specified element
+       * @param element The HTML element to add the listener to
+       * @param eventName The DOM event name
+       * @param handler The event handler function
+       * @returns A DOMEventListener object
+       */
+      static addDOMListener(
+        element: HTMLElement,
+        eventName: string,
+        handler: (e: DOMEvent) => void
+      ): DOMEventListener
+
+      /**
+       * Adds a one-time event listener that will be automatically removed after firing
+       * @param instance The target object
+       * @param eventName The event name
+       * @param handler The event handler
+       * @returns A MapEventListener object
+       */
+      static once<T extends EventTarget, K extends keyof EventMap<T>>(
+        instance: T,
+        eventName: K,
+        handler: (e: EventMap<T>[K]) => void
+      ): MapEventListener
+      
+      // Overload for custom events
+      static once(
+        instance: any,
+        eventName: string,
+        handler: (e?: any) => void
+      ): MapEventListener
+
+      /**
+       * Triggers an event on the specified instance
+       * @param instance The target object
+       * @param eventName The event name to trigger
+       * @param args Additional arguments to pass to the event handlers
+       */
+      static trigger(
+        instance: any,
+        eventName: string,
+        ...args: any[]
+      ): void
+
+      /**
+       * Removes all event listeners from the specified instance
+       * @param instance The target object
+       * @param eventName Optional specific event name to clear
+       */
+      static clearListeners(
+        instance: any,
+        eventName?: string
+      ): void
+
+      /**
+       * Removes a specific event listener
+       * @param listener The listener to remove
+       */
+      static removeListener(listener: MapEventListener | DOMEventListener): void
+
+      /**
+       * Stops event propagation and prevents default behavior
+       * @param e The event to stop
+       */
+      static stopDispatch(e: Event): void
+
+      /**
+       * Prevents the default behavior of an event
+       * @param e The event
+       */
+      static preventDefault(e: Event): void
+
+      /**
+       * Checks if an object has any event listeners
+       * @param instance The object to check
+       * @param eventName Optional specific event name
+       */
+      static hasListeners(
+        instance: any,
+        eventName?: string
+      ): boolean
     }
 
     // Utility functions
