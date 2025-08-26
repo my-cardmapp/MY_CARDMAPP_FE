@@ -352,6 +352,15 @@ declare namespace naver {
       getBounds(): LatLngBounds
     }
 
+    // Stroke style type definitions
+    type StrokeStyleType = 'solid' | 'shortdash' | 'shortdot' | 'shortdashdot' | 
+      'shortdashdotdot' | 'dot' | 'dash' | 'dashdot' | 'longdash' | 
+      'longdashdot' | 'longdashdotdot'
+    
+    type StrokeLineCapType = 'butt' | 'round' | 'square'
+    
+    type StrokeLineJoinType = 'miter' | 'round' | 'bevel'
+
     // Polyline overlay
     class Polyline extends OverlayView {
       constructor(options: PolylineOptions)
@@ -360,23 +369,26 @@ declare namespace naver {
       setOptions(options: Partial<PolylineOptions>): void
       getDistance(): number
       getBounds(): LatLngBounds
+      setVisible(visible: boolean): void
+      getVisible(): boolean
     }
 
     interface PolylineOptions {
       map?: Map
-      path: (LatLng | LatLngLiteral)[]
+      path: LatLng[] | LatLngLiteral[] | (LatLng | LatLngLiteral)[]
       strokeColor?: string
       strokeOpacity?: number
       strokeWeight?: number
-      strokeStyle?: 'solid' | 'shortdash' | 'shortdot' | 'shortdashdot' | 'shortdashdotdot' | 'dot' | 'dash' | 'dashdot' | 'longdash' | 'longdashdot' | 'longdashdotdot'
-      strokeLineCap?: 'butt' | 'round' | 'square'
-      strokeLineJoin?: 'miter' | 'round' | 'bevel'
+      strokeStyle?: StrokeStyleType
+      strokeLineCap?: StrokeLineCapType
+      strokeLineJoin?: StrokeLineJoinType
       startIcon?: PointingIcon
       startIconSize?: number
       endIcon?: PointingIcon
       endIconSize?: number
       clickable?: boolean
       zIndex?: number
+      visible?: boolean
     }
 
     // Pointing icon enumeration
@@ -397,21 +409,24 @@ declare namespace naver {
       setOptions(options: Partial<PolygonOptions>): void
       getArea(): number
       getBounds(): LatLngBounds
+      setVisible(visible: boolean): void
+      getVisible(): boolean
     }
 
     interface PolygonOptions {
       map?: Map
-      paths: (LatLng | LatLngLiteral)[] | (LatLng | LatLngLiteral)[][]
+      paths: (LatLng | LatLngLiteral)[] | (LatLng | LatLngLiteral)[][]  // Supports holes with nested arrays
       fillColor?: string
       fillOpacity?: number
       strokeColor?: string
       strokeOpacity?: number
       strokeWeight?: number
-      strokeStyle?: string
-      strokeLineCap?: string
-      strokeLineJoin?: string
+      strokeStyle?: StrokeStyleType
+      strokeLineCap?: StrokeLineCapType
+      strokeLineJoin?: StrokeLineJoinType
       clickable?: boolean
       zIndex?: number
+      visible?: boolean
     }
 
     // Circle overlay
@@ -424,20 +439,25 @@ declare namespace naver {
       setOptions(options: Partial<CircleOptions>): void
       getBounds(): LatLngBounds
       getArea(): number
+      setVisible(visible: boolean): void
+      getVisible(): boolean
     }
 
     interface CircleOptions {
       map?: Map
       center: LatLng | LatLngLiteral
-      radius: number
+      radius: number  // In meters
       fillColor?: string
       fillOpacity?: number
       strokeColor?: string
       strokeOpacity?: number
       strokeWeight?: number
-      strokeStyle?: string
+      strokeStyle?: StrokeStyleType
+      strokeLineCap?: StrokeLineCapType
+      strokeLineJoin?: StrokeLineJoinType
       clickable?: boolean
       zIndex?: number
+      visible?: boolean
     }
 
     // Rectangle overlay
@@ -446,6 +466,9 @@ declare namespace naver {
       setBounds(bounds: LatLngBounds): void
       getBounds(): LatLngBounds
       setOptions(options: Partial<RectangleOptions>): void
+      getArea(): number
+      setVisible(visible: boolean): void
+      getVisible(): boolean
     }
 
     interface RectangleOptions {
@@ -456,9 +479,46 @@ declare namespace naver {
       strokeColor?: string
       strokeOpacity?: number
       strokeWeight?: number
-      strokeStyle?: string
+      strokeStyle?: StrokeStyleType
+      strokeLineCap?: StrokeLineCapType
+      strokeLineJoin?: StrokeLineJoinType
       clickable?: boolean
       zIndex?: number
+      visible?: boolean
+    }
+
+    // Ellipse overlay
+    class Ellipse extends OverlayView {
+      constructor(options: EllipseOptions)
+      setCenter(center: LatLng | LatLngLiteral): void
+      getCenter(): LatLng
+      setRadiusX(radiusX: number): void
+      getRadiusX(): number
+      setRadiusY(radiusY: number): void
+      getRadiusY(): number
+      setOptions(options: Partial<EllipseOptions>): void
+      getBounds(): LatLngBounds
+      getArea(): number
+      setVisible(visible: boolean): void
+      getVisible(): boolean
+    }
+
+    interface EllipseOptions {
+      map?: Map
+      center: LatLng | LatLngLiteral
+      radiusX: number  // Horizontal radius in meters
+      radiusY: number  // Vertical radius in meters
+      fillColor?: string
+      fillOpacity?: number
+      strokeColor?: string
+      strokeOpacity?: number
+      strokeWeight?: number
+      strokeStyle?: StrokeStyleType
+      strokeLineCap?: StrokeLineCapType
+      strokeLineJoin?: StrokeLineJoinType
+      clickable?: boolean
+      zIndex?: number
+      visible?: boolean
     }
 
     // Ground overlay
@@ -477,6 +537,179 @@ declare namespace naver {
       opacity?: number
       clickable?: boolean
       zIndex?: number
+    }
+
+    // Data layer for GeoJSON and feature management
+    class Data {
+      constructor()
+      add(feature: Data.Feature | Data.FeatureOptions): Data.Feature
+      addGeoJson(geoJson: GeoJsonObject, options?: GeoJsonOptions): Data.Feature[]
+      remove(feature: Data.Feature): void
+      forEach(callback: (feature: Data.Feature) => void): void
+      overrideStyle(feature: Data.Feature, style: Data.StyleOptions): void
+      revertStyle(feature?: Data.Feature): void
+      setMap(map: Map | null): void
+      setStyle(style: Data.StyleOptions | Data.StylingFunction): void
+      toGeoJson(): GeoJsonObject
+      contains(latLng: LatLng | LatLngLiteral): boolean
+      loadGeoJson(url: string, options?: GeoJsonOptions, callback?: (features: Data.Feature[]) => void): void
+    }
+
+    namespace Data {
+      interface Feature {
+        getId(): string | number | undefined
+        getProperty(name: string): any
+        setProperty(name: string, value: any): void
+        removeProperty(name: string): void
+        getGeometry(): Data.Geometry
+        setGeometry(geometry: Data.Geometry | LatLng | LatLngLiteral): void
+        toGeoJson(): GeoJsonFeature
+      }
+
+      interface FeatureOptions {
+        geometry?: Data.Geometry | LatLng | LatLngLiteral
+        id?: string | number
+        properties?: any
+      }
+
+      interface StyleOptions {
+        clickable?: boolean
+        cursor?: string
+        draggable?: boolean
+        fillColor?: string
+        fillOpacity?: number
+        icon?: string | ImageIcon | SymbolIcon
+        shape?: MarkerShape
+        strokeColor?: string
+        strokeOpacity?: number
+        strokeWeight?: number
+        strokeStyle?: StrokeStyleType
+        strokeLineCap?: StrokeLineCapType
+        strokeLineJoin?: StrokeLineJoinType
+        title?: string
+        visible?: boolean
+        zIndex?: number
+      }
+
+      type StylingFunction = (feature: Data.Feature) => Data.StyleOptions
+
+      // Geometry base class and implementations
+      abstract class Geometry {
+        getType(): string
+      }
+
+      class Point extends Geometry {
+        constructor(latLng: LatLng | LatLngLiteral)
+        get(): LatLng
+      }
+
+      class LineString extends Geometry {
+        constructor(latLngs: (LatLng | LatLngLiteral)[])
+        getArray(): LatLng[]
+        getAt(index: number): LatLng
+        getLength(): number
+      }
+
+      class LinearRing extends Geometry {
+        constructor(latLngs: (LatLng | LatLngLiteral)[])
+        getArray(): LatLng[]
+        getAt(index: number): LatLng
+        getLength(): number
+      }
+
+      class Polygon extends Geometry {
+        constructor(paths: (LatLng | LatLngLiteral)[][] | LinearRing[])
+        getArray(): LinearRing[]
+        getAt(index: number): LinearRing
+        getLength(): number
+      }
+
+      class MultiPoint extends Geometry {
+        constructor(points: (LatLng | LatLngLiteral)[] | Point[])
+        getArray(): Point[]
+        getAt(index: number): Point
+        getLength(): number
+      }
+
+      class MultiLineString extends Geometry {
+        constructor(lineStrings: (LatLng | LatLngLiteral)[][] | LineString[])
+        getArray(): LineString[]
+        getAt(index: number): LineString
+        getLength(): number
+      }
+
+      class MultiPolygon extends Geometry {
+        constructor(polygons: (LatLng | LatLngLiteral)[][][] | Polygon[])
+        getArray(): Polygon[]
+        getAt(index: number): Polygon
+        getLength(): number
+      }
+
+      class GeometryCollection extends Geometry {
+        constructor(geometries: Geometry[])
+        getArray(): Geometry[]
+        getAt(index: number): Geometry
+        getLength(): number
+      }
+    }
+
+    // GeoJSON type definitions
+    interface GeoJsonOptions {
+      idProperty?: string
+      featureFactory?: (geoJsonFeature: GeoJsonFeature) => Data.Feature
+    }
+
+    type GeoJsonObject = GeoJsonFeature | GeoJsonFeatureCollection | GeoJsonGeometry
+
+    interface GeoJsonFeature {
+      type: 'Feature'
+      geometry: GeoJsonGeometry
+      properties?: any
+      id?: string | number
+    }
+
+    interface GeoJsonFeatureCollection {
+      type: 'FeatureCollection'
+      features: GeoJsonFeature[]
+    }
+
+    type GeoJsonGeometry = GeoJsonPoint | GeoJsonLineString | GeoJsonPolygon | 
+      GeoJsonMultiPoint | GeoJsonMultiLineString | GeoJsonMultiPolygon | 
+      GeoJsonGeometryCollection
+
+    interface GeoJsonPoint {
+      type: 'Point'
+      coordinates: [number, number]  // [longitude, latitude]
+    }
+
+    interface GeoJsonLineString {
+      type: 'LineString'
+      coordinates: [number, number][]
+    }
+
+    interface GeoJsonPolygon {
+      type: 'Polygon'
+      coordinates: [number, number][][]  // Array of linear rings
+    }
+
+    interface GeoJsonMultiPoint {
+      type: 'MultiPoint'
+      coordinates: [number, number][]
+    }
+
+    interface GeoJsonMultiLineString {
+      type: 'MultiLineString'
+      coordinates: [number, number][][]
+    }
+
+    interface GeoJsonMultiPolygon {
+      type: 'MultiPolygon'
+      coordinates: [number, number][][][]
+    }
+
+    interface GeoJsonGeometryCollection {
+      type: 'GeometryCollection'
+      geometries: GeoJsonGeometry[]
     }
 
     // Event types
@@ -681,3 +914,22 @@ declare global {
     navermap_authFailure?: () => void
   }
 }
+
+// Export types for external use
+export type NaverMap = naver.maps.Map
+export type NaverLatLng = naver.maps.LatLng
+export type NaverLatLngLiteral = naver.maps.LatLngLiteral
+export type NaverLatLngBounds = naver.maps.LatLngBounds
+export type NaverMarker = naver.maps.Marker
+export type NaverPolyline = naver.maps.Polyline
+export type NaverPolygon = naver.maps.Polygon
+export type NaverCircle = naver.maps.Circle
+export type NaverEllipse = naver.maps.Ellipse
+export type NaverRectangle = naver.maps.Rectangle
+export type NaverData = naver.maps.Data
+export type NaverStrokeStyleType = naver.maps.StrokeStyleType
+export type NaverStrokeLineCapType = naver.maps.StrokeLineCapType
+export type NaverStrokeLineJoinType = naver.maps.StrokeLineJoinType
+export type NaverGeoJsonObject = naver.maps.GeoJsonObject
+export type NaverGeoJsonFeature = naver.maps.GeoJsonFeature
+export type NaverGeoJsonFeatureCollection = naver.maps.GeoJsonFeatureCollection
