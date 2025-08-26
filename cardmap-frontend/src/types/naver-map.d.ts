@@ -1008,14 +1008,34 @@ declare namespace naver {
 
     // Utility functions
     namespace Service {
+      /**
+       * Geocode an address to coordinates
+       */
       function geocode(
         options: GeocodeOptions,
         callback: (status: Status, response: GeocodeResponse) => void
       ): void
 
+      /**
+       * Reverse geocode coordinates to address
+       */
+      function reverseGeocode(
+        options: ReverseGeocodeOptions,
+        callback: (status: Status, response: ReverseGeocodeResponse) => void
+      ): void
+
       interface GeocodeOptions {
         query: string
-        coordinate?: LatLng
+        coordinate?: LatLng | LatLngLiteral
+        filter?: 'HCODE' | 'BCODE'  // House code or Building code
+        page?: number
+        count?: number
+      }
+
+      interface ReverseGeocodeOptions {
+        coords: LatLng | LatLngLiteral | string  // "lng,lat" format string also supported
+        orders?: string  // 'legalcode' | 'admcode' | 'addr' | 'roadaddr' - can be comma separated
+        output?: 'json' | 'xml'
       }
 
       interface GeocodeResponse {
@@ -1026,6 +1046,64 @@ declare namespace naver {
             count: number
           }
           addresses: Address[]
+          errorMessage?: string
+        }
+      }
+
+      interface ReverseGeocodeResponse {
+        v2: {
+          status: {
+            code: number
+            name: string
+            message: string
+          }
+          results: ReverseGeocodeResult[]
+        }
+      }
+
+      interface ReverseGeocodeResult {
+        name: string
+        code: {
+          id: string
+          type: string
+          mappingId: string
+        }
+        region: RegionInfo
+        land?: LandInfo
+      }
+
+      interface RegionInfo {
+        area0: AreaInfo  // Country
+        area1: AreaInfo & { alias?: string }  // State/Province
+        area2?: AreaInfo  // City
+        area3?: AreaInfo  // District
+        area4?: AreaInfo  // Sub-district
+      }
+
+      interface AreaInfo {
+        name: string
+        coords: {
+          center: {
+            x: number
+            y: number
+          }
+        }
+      }
+
+      interface LandInfo {
+        type: string
+        number1: string
+        number2: string
+        addition0: {
+          type: string
+          value: string
+        }
+        name: string
+        coords: {
+          center: {
+            x: number
+            y: number
+          }
         }
       }
 
@@ -1036,12 +1114,166 @@ declare namespace naver {
         x: string
         y: string
         distance?: number
+        addressElements?: AddressElement[]
+      }
+
+      interface AddressElement {
+        types: string[]
+        longName: string
+        shortName: string
+        code: string
       }
 
       enum Status {
         OK = 200,
         ERROR = 500,
+        INVALID_REQUEST = 400,
+        UNKNOWN_ERROR = 501
       }
+    }
+
+    // Coordinate Converter namespace
+    namespace CoordinateConverter {
+      /**
+       * Convert TM128 coordinates to WGS84 LatLng
+       */
+      function fromTM128ToLatLng(tm128: Point): LatLng
+
+      /**
+       * Convert WGS84 LatLng to TM128 coordinates
+       */
+      function fromLatLngToTM128(latlng: LatLng): Point
+
+      /**
+       * Convert Web Mercator (EPSG:3857) to WGS84 LatLng
+       */
+      function fromEPSG3857ToLatLng(coord: Point): LatLng
+
+      /**
+       * Convert WGS84 LatLng to Web Mercator (EPSG:3857)
+       */
+      function fromLatLngToEPSG3857(latlng: LatLng): Point
+
+      /**
+       * Convert UTM-K coordinates to WGS84 LatLng
+       */
+      function fromUTMKToLatLng(utmk: Point): LatLng
+
+      /**
+       * Convert WGS84 LatLng to UTM-K coordinates
+       */
+      function fromLatLngToUTMK(latlng: LatLng): Point
+    }
+
+    // Projection system classes
+    class Projection {
+      /**
+       * Get the default projection (EPSG:3857 - Web Mercator)
+       */
+      static getDefault(): EPSG3857
+
+      /**
+       * Get a projection by name
+       */
+      static get(name: string): Projection | null
+
+      /**
+       * Convert coordinate to pixel point
+       */
+      fromCoordToPoint(coord: LatLng): Point
+
+      /**
+       * Convert pixel point to coordinate
+       */
+      fromPointToCoord(point: Point): LatLng
+
+      /**
+       * Get the projection name
+       */
+      getProjectionName(): string
+
+      /**
+       * Calculate destination coordinate from angle and distance
+       * @param coord Starting coordinate
+       * @param angle Bearing in degrees
+       * @param meter Distance in meters
+       */
+      getDestinationCoord(coord: LatLng, angle: number, meter: number): LatLng
+
+      /**
+       * Calculate distance between two coordinates in meters
+       */
+      getDistance(coord1: LatLng, coord2: LatLng): number
+    }
+
+    /**
+     * Web Mercator projection (EPSG:3857)
+     * Used by most web mapping services
+     */
+    class EPSG3857 extends Projection {
+      constructor()
+    }
+
+    /**
+     * WGS84 Geographic projection (EPSG:4326)
+     * Standard GPS coordinate system
+     */
+    class EPSG4326 extends Projection {
+      constructor()
+    }
+
+    /**
+     * Korean UTM-K projection
+     * Used in Korean mapping systems
+     */
+    class UTMK extends Projection {
+      constructor()
+    }
+
+    /**
+     * Korean TM128 projection
+     * Legacy Korean coordinate system
+     */
+    class TM128 extends Projection {
+      constructor()
+    }
+
+    // Animation utilities namespace
+    namespace animation {
+      interface AnimationOptions {
+        duration?: number  // Animation duration in milliseconds
+        easing?: EasingType
+        callback?: () => void  // Called when animation completes
+      }
+
+      type EasingType = 'linear' | 'easeInCubic' | 'easeOutCubic' | 'easeInOutCubic'
+
+      /**
+       * Animate panning to a location
+       */
+      function panTo(
+        map: Map,
+        coord: LatLng | LatLngLiteral,
+        options?: AnimationOptions
+      ): void
+
+      /**
+       * Animate zooming to a level
+       */
+      function zoomTo(
+        map: Map,
+        zoom: number,
+        options?: AnimationOptions
+      ): void
+
+      /**
+       * Animate fitting to bounds
+       */
+      function fitBounds(
+        map: Map,
+        bounds: LatLngBounds,
+        options?: AnimationOptions & FitBoundsOptions
+      ): void
     }
 
     // MapSystemProjection for overlay positioning
@@ -1139,8 +1371,12 @@ declare namespace naver {
 
     // Map Type Registry for custom map types
     class MapTypeRegistry {
-      set(key: string, value: MapType): void
-      get(key: string): MapType | null
+      set(id: string, mapType: MapType): void
+      get(id: string): MapType | null
+      has(id: string): boolean
+      delete(id: string): boolean
+      clear(): void
+      forEach(callback: (mapType: MapType, id: string) => void): void
     }
 
     interface MapType {
