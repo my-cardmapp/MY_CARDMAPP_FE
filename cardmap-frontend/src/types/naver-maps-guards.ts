@@ -1,9 +1,24 @@
 /**
  * Type guards for Naver Maps objects
  * These guards support both class instances and duck typing for flexibility
+ * @module naver-maps-guards
  */
 
-// Check if naver.maps is available
+// Import types to ensure they are available
+/// <reference path="./naver-map.d.ts" />
+
+/**
+ * Checks if the Naver Maps API is loaded and available
+ * @returns {boolean} True if naver.maps namespace is available
+ * @example
+ * ```typescript
+ * if (isNaverMapsAvailable()) {
+ *   const map = new naver.maps.Map('map', options);
+ * } else {
+ *   console.error('Naver Maps API not loaded');
+ * }
+ * ```
+ */
 export function isNaverMapsAvailable(): boolean {
   return typeof window !== 'undefined' && 
          window.naver && 
@@ -11,7 +26,17 @@ export function isNaverMapsAvailable(): boolean {
 }
 
 /**
- * Check if object is a LatLng instance
+ * Type guard to check if an object is a LatLng instance
+ * @param {any} obj - The object to check
+ * @returns {obj is naver.maps.LatLng} True if obj is a LatLng
+ * @example
+ * ```typescript
+ * const coord = getCoordinate();
+ * if (isLatLng(coord)) {
+ *   console.log('Latitude:', coord.lat());
+ *   console.log('Longitude:', coord.lng());
+ * }
+ * ```
  */
 export function isLatLng(obj: any): obj is naver.maps.LatLng {
   if (!obj) return false
@@ -26,7 +51,16 @@ export function isLatLng(obj: any): obj is naver.maps.LatLng {
 }
 
 /**
- * Check if object is a LatLngLiteral
+ * Type guard to check if an object is a LatLngLiteral
+ * @param {any} obj - The object to check
+ * @returns {obj is naver.maps.LatLngLiteral} True if obj is a LatLngLiteral
+ * @example
+ * ```typescript
+ * const position = { lat: 37.5, lng: 127 };
+ * if (isLatLngLiteral(position)) {
+ *   map.setCenter(position);
+ * }
+ * ```
  */
 export function isLatLngLiteral(obj: any): obj is naver.maps.LatLngLiteral {
   if (!obj) return false
@@ -37,7 +71,17 @@ export function isLatLngLiteral(obj: any): obj is naver.maps.LatLngLiteral {
 }
 
 /**
- * Check if object is a Marker instance
+ * Type guard to check if an object is a Marker instance
+ * @param {any} obj - The object to check
+ * @returns {obj is naver.maps.Marker} True if obj is a Marker
+ * @example
+ * ```typescript
+ * const overlay = getOverlay();
+ * if (isMarker(overlay)) {
+ *   overlay.setAnimation(naver.maps.Animation.BOUNCE);
+ *   const position = overlay.getPosition();
+ * }
+ * ```
  */
 export function isMarker(obj: any): obj is naver.maps.Marker {
   if (!obj) return false
@@ -53,7 +97,17 @@ export function isMarker(obj: any): obj is naver.maps.Marker {
 }
 
 /**
- * Check if object is a Map instance
+ * Type guard to check if an object is a Map instance
+ * @param {any} obj - The object to check
+ * @returns {obj is naver.maps.Map} True if obj is a Map
+ * @example
+ * ```typescript
+ * const element = getMapElement();
+ * if (isMap(element)) {
+ *   element.setZoom(10);
+ *   element.panTo(new naver.maps.LatLng(37.5, 127));
+ * }
+ * ```
  */
 export function isMap(obj: any): obj is naver.maps.Map {
   if (!obj) return false
@@ -69,7 +123,17 @@ export function isMap(obj: any): obj is naver.maps.Map {
 }
 
 /**
- * Check if object is an InfoWindow instance
+ * Type guard to check if an object is an InfoWindow instance
+ * @param {any} obj - The object to check
+ * @returns {obj is naver.maps.InfoWindow} True if obj is an InfoWindow
+ * @example
+ * ```typescript
+ * const popup = getPopup();
+ * if (isInfoWindow(popup)) {
+ *   popup.open(map, marker);
+ *   popup.setContent('<div>Updated content</div>');
+ * }
+ * ```
  */
 export function isInfoWindow(obj: any): obj is naver.maps.InfoWindow {
   if (!obj) return false
@@ -385,7 +449,16 @@ export function isMarkerClustering(obj: any): obj is naver.maps.MarkerClustering
 }
 
 /**
- * Check if value is a valid Position constant
+ * Checks if a value is a valid Position constant for control placement
+ * @param {any} value - The value to check
+ * @returns {value is number} True if value is a valid position (0-12)
+ * @example
+ * ```typescript
+ * const position = naver.maps.Position.TOP_RIGHT;
+ * if (isValidPosition(position)) {
+ *   control.setPosition(position);
+ * }
+ * ```
  */
 export function isValidPosition(value: any): value is number {
   if (typeof value !== 'number') return false
@@ -393,14 +466,32 @@ export function isValidPosition(value: any): value is number {
 }
 
 /**
- * Check if value is a valid Animation constant
+ * Checks if a value is a valid Animation constant for markers
+ * @param {any} value - The value to check
+ * @returns {value is naver.maps.Animation} True if value is BOUNCE (1) or DROP (2)
+ * @example
+ * ```typescript
+ * const animation = naver.maps.Animation.BOUNCE;
+ * if (isValidAnimation(animation)) {
+ *   marker.setAnimation(animation);
+ * }
+ * ```
  */
 export function isValidAnimation(value: any): value is naver.maps.Animation {
   return value === 1 || value === 2 // BOUNCE or DROP
 }
 
 /**
- * Check if string is a valid StrokeStyleType
+ * Checks if a string is a valid stroke style type
+ * @param {any} style - The style to check
+ * @returns {style is naver.maps.StrokeStyleType} True if style is valid
+ * @example
+ * ```typescript
+ * const style = 'dash';
+ * if (isValidStrokeStyle(style)) {
+ *   polyline.setOptions({ strokeStyle: style });
+ * }
+ * ```
  */
 export function isValidStrokeStyle(style: any): style is naver.maps.StrokeStyleType {
   if (typeof style !== 'string') return false
@@ -566,7 +657,20 @@ export function isPointerEvent(obj: any): obj is naver.maps.PointerEvent {
 }
 
 /**
- * Utility function to check coordinate validity
+ * Validates that latitude and longitude values are within valid ranges
+ * @param {any} lat - The latitude value to check
+ * @param {any} lng - The longitude value to check
+ * @returns {boolean} True if both values are valid coordinates
+ * @example
+ * ```typescript
+ * const lat = 37.5666805;
+ * const lng = 126.9784147;
+ * if (isValidCoordinate(lat, lng)) {
+ *   const coord = new naver.maps.LatLng(lat, lng);
+ * } else {
+ *   console.error('Invalid coordinates');
+ * }
+ * ```
  */
 export function isValidCoordinate(lat: any, lng: any): boolean {
   return typeof lat === 'number' && 
@@ -576,7 +680,18 @@ export function isValidCoordinate(lat: any, lng: any): boolean {
 }
 
 /**
- * Utility function to check zoom level validity
+ * Validates that a zoom level is within the valid range (0-21)
+ * @param {any} zoom - The zoom level to check
+ * @returns {boolean} True if zoom is a valid level
+ * @example
+ * ```typescript
+ * const zoom = 15;
+ * if (isValidZoom(zoom)) {
+ *   map.setZoom(zoom);
+ * } else {
+ *   console.error('Invalid zoom level');
+ * }
+ * ```
  */
 export function isValidZoom(zoom: any): boolean {
   return typeof zoom === 'number' && zoom >= 0 && zoom <= 21

@@ -1,42 +1,246 @@
+/**
+ * Naver Maps API Type Definitions
+ * @module naver.maps
+ * @see {@link https://navermaps.github.io/maps.js.ncp/docs/index.html}
+ */
 declare namespace naver {
   namespace maps {
-    // KVO base class with generics
+    /**
+     * Key-Value Observable base class for managing properties and event binding
+     * @class KVO
+     * @template T - The type of properties managed by this KVO instance
+     * @example
+     * ```typescript
+     * // Create a KVO instance with typed properties
+     * interface MyProperties {
+     *   name: string;
+     *   value: number;
+     * }
+     * const kvo = new naver.maps.KVO<MyProperties>();
+     * kvo.set('name', 'example');
+     * const name = kvo.get('name'); // string
+     * ```
+     */
     class KVO<T = any> {
+      /**
+       * Adds an event listener for property changes
+       * @param eventName - The name of the event to listen for
+       * @param listener - The callback function to execute when the event occurs
+       * @returns A listener object that can be used to remove the listener
+       */
       addListener(eventName: string, listener: Function): any
+      
+      /**
+       * Removes one or more event listeners
+       * @param listeners - The listener(s) to remove
+       */
       removeListener(listeners: any): void
+      
+      /**
+       * Gets the value of a property
+       * @param key - The property key to retrieve
+       * @returns The value of the specified property
+       * @example
+       * ```typescript
+       * const zoom = map.get('zoom'); // number
+       * ```
+       */
       get<K extends keyof T>(key: K): T[K]
       get(key: string): any
+      
+      /**
+       * Sets the value of a property
+       * @param key - The property key to set
+       * @param value - The new value for the property
+       * @example
+       * ```typescript
+       * map.set('zoom', 10);
+       * ```
+       */
       set<K extends keyof T>(key: K, value: T[K]): void
       set(key: string, value: any): void
+      
+      /**
+       * Sets multiple property values at once
+       * @param properties - An object containing property key-value pairs
+       * @example
+       * ```typescript
+       * map.setValues({ zoom: 10, center: new naver.maps.LatLng(37.5, 127) });
+       * ```
+       */
       setValues(properties: Partial<T>): void
+      
+      /**
+       * Binds a property to another KVO object's property
+       * @param key - The local property key to bind
+       * @param target - The target KVO object to bind to
+       * @param targetKey - The target property key (defaults to same as key)
+       * @example
+       * ```typescript
+       * marker.bindTo('position', map, 'center');
+       * ```
+       */
       bindTo<K extends keyof T>(key: K, target: KVO, targetKey?: string): void
       bindTo(key: string, target: KVO, targetKey?: string): void
+      
+      /**
+       * Unbinds a property from its target
+       * @param key - The property key to unbind
+       */
       unbind(key: string): void
+      
+      /**
+       * Unbinds all properties from their targets
+       */
       unbindAll(): void
     }
 
-    // KVOArray for controls
+    /**
+     * Observable array class for managing collections with event support
+     * @class KVOArray
+     * @extends KVO
+     * @template T - The type of elements in the array
+     * @example
+     * ```typescript
+     * const controls = map.controls[naver.maps.Position.TOP_LEFT];
+     * controls.push(new naver.maps.CustomControl('<div>Custom</div>'));
+     * ```
+     */
     class KVOArray<T> extends KVO {
+      /**
+       * Removes all elements from the array
+       */
       clear(): void
+      
+      /**
+       * Executes a callback for each element in the array
+       * @param callback - Function to execute for each element
+       */
       forEach(callback: (element: T, index: number) => void): void
+      
+      /**
+       * Returns a copy of the array as a standard JavaScript array
+       * @returns A new array containing all elements
+       */
       getArray(): T[]
+      
+      /**
+       * Gets the element at the specified index
+       * @param index - The zero-based index of the element
+       * @returns The element at the specified index
+       */
       getAt(index: number): T
+      
+      /**
+       * Returns the number of elements in the array
+       * @returns The length of the array
+       */
       getLength(): number
+      
+      /**
+       * Inserts an element at the specified index
+       * @param index - The index at which to insert the element
+       * @param element - The element to insert
+       */
       insertAt(index: number, element: T): void
+      
+      /**
+       * Removes and returns the last element from the array
+       * @returns The removed element
+       */
       pop(): T
+      
+      /**
+       * Adds an element to the end of the array
+       * @param element - The element to add
+       * @returns The new length of the array
+       */
       push(element: T): number
+      
+      /**
+       * Removes and returns the element at the specified index
+       * @param index - The index of the element to remove
+       * @returns The removed element
+       */
       removeAt(index: number): T
+      
+      /**
+       * Replaces the element at the specified index
+       * @param index - The index of the element to replace
+       * @param element - The new element
+       */
       setAt(index: number, element: T): void
     }
 
+    /**
+     * The main map class that displays Naver Maps
+     * @class Map
+     * @extends KVO
+     * @example
+     * ```typescript
+     * // Create a new map instance
+     * const map = new naver.maps.Map('map', {
+     *   center: new naver.maps.LatLng(37.5666805, 126.9784147),
+     *   zoom: 10,
+     *   mapTypeId: naver.maps.MapTypeId.NORMAL,
+     *   zoomControl: true,
+     *   zoomControlOptions: {
+     *     position: naver.maps.Position.TOP_RIGHT
+     *   }
+     * });
+     * ```
+     */
     class Map extends KVO {
+      /**
+       * Creates a new Map instance
+       * @param element - The HTML element or element ID where the map will be rendered
+       * @param options - Map configuration options
+       * @throws Will throw an error if the element is not found
+       */
       constructor(element: HTMLElement | string, options: MapOptions)
+      /**
+       * Sets the center position of the map
+       * @param latlng - The new center position
+       * @example
+       * ```typescript
+       * map.setCenter(new naver.maps.LatLng(37.5666805, 126.9784147));
+       * ```
+       */
       setCenter(latlng: LatLng | LatLngLiteral): void
+      
+      /**
+       * Sets the zoom level of the map
+       * @param zoom - The new zoom level (0-21)
+       */
       setZoom(zoom: number): void
+      
+      /**
+       * Gets the current center position of the map
+       * @returns The current center as a LatLng object
+       */
       getCenter(): LatLng
+      
+      /**
+       * Gets the current zoom level of the map
+       * @returns The current zoom level
+       */
       getZoom(): number
+      
+      /**
+       * Destroys the map and releases all resources
+       */
       destroy(): void
+      
+      /**
+       * Gets the HTML element that contains the map
+       * @returns The map container element
+       */
       getElement(): HTMLElement
+      
+      /**
+       * Collection of map controls organized by position
+       * @see {@link Position} for available positions
+       */
       controls: { [key: number]: KVOArray<CustomControl> }
       
       // Extended methods
@@ -47,7 +251,7 @@ declare namespace naver {
       getProjection(): MapSystemProjection
       setOptions(options: Partial<MapOptions>): void
       refresh(): void
-      setMapTypeId(mapTypeId: string | MapTypeId): void
+      setMapTypeId(mapTypeId: string): void
       getMapTypeId(): string
       setTilt(tilt: number): void
       getTilt(): number
@@ -60,18 +264,78 @@ declare namespace naver {
       trigger(eventName: string, ...args: any[]): void
     }
 
+    /**
+     * Represents a geographical coordinate with latitude and longitude
+     * @class LatLng
+     * @example
+     * ```typescript
+     * const coord = new naver.maps.LatLng(37.5666805, 126.9784147);
+     * console.log(coord.lat()); // 37.5666805
+     * console.log(coord.lng()); // 126.9784147
+     * ```
+     */
     class LatLng {
+      /**
+       * Creates a new LatLng instance
+       * @param lat - Latitude in degrees (-90 to 90)
+       * @param lng - Longitude in degrees (-180 to 180)
+       * @throws Will throw an error if coordinates are out of range
+       */
       constructor(lat: number, lng: number)
+      
+      /**
+       * Returns the latitude value
+       * @returns Latitude in degrees
+       */
       lat(): number
+      
+      /**
+       * Returns the longitude value
+       * @returns Longitude in degrees
+       */
       lng(): number
+      
+      /**
+       * Checks if this coordinate equals another coordinate
+       * @param other - The coordinate to compare with
+       * @returns True if coordinates are equal
+       */
       equals(other: LatLng | LatLngLiteral): boolean
+      
+      /**
+       * Returns a string representation of the coordinate
+       * @returns String in format "LatLng(lat, lng)"
+       */
       toString(): string
+      
+      /**
+       * Converts the coordinate to a pixel point
+       * @returns The pixel point representation
+       */
       toPoint(): Point
+      
+      /**
+       * Calculates a destination point given a bearing and distance
+       * @param angle - The bearing in degrees (0-360)
+       * @param distance - The distance in meters
+       * @returns The destination coordinate
+       */
       destinationPoint(angle: number, distance: number): LatLng
     }
 
+    /**
+     * Plain object representation of a coordinate
+     * @interface LatLngLiteral
+     * @example
+     * ```typescript
+     * const coord: LatLngLiteral = { lat: 37.5666805, lng: 126.9784147 };
+     * map.setCenter(coord);
+     * ```
+     */
     interface LatLngLiteral {
+      /** Latitude in degrees (-90 to 90) */
       lat: number
+      /** Longitude in degrees (-180 to 180) */
       lng: number
     }
 
@@ -98,10 +362,14 @@ declare namespace naver {
       contains(point: Point): boolean
     }
 
+    /**
+     * Configuration options for Map initialization
+     * @interface MapOptions
+     */
     interface MapOptions {
       center: LatLng | LatLngLiteral
       zoom: number
-      mapTypeId?: string | MapTypeId
+      mapTypeId?: string
       mapTypeControl?: boolean
       zoomControl?: boolean
       zoomControlOptions?: ZoomControlOptions
@@ -137,7 +405,17 @@ declare namespace naver {
       legendDisabled?: boolean
     }
 
-    // Position constants
+    /**
+     * Position constants for control placement on the map
+     * @enum {number}
+     * @readonly
+     * @example
+     * ```typescript
+     * const control = new naver.maps.ZoomControl({
+     *   position: naver.maps.Position.TOP_RIGHT
+     * });
+     * ```
+     */
     const Position: {
       CENTER: 0
       TOP_LEFT: 1
@@ -154,7 +432,15 @@ declare namespace naver {
       BOTTOM_RIGHT: 12
     }
 
-    // Animation enumeration
+    /**
+     * Animation types for markers
+     * @enum {number}
+     * @readonly
+     * @example
+     * ```typescript
+     * marker.setAnimation(naver.maps.Animation.BOUNCE);
+     * ```
+     */
     const Animation: {
       BOUNCE: 1
       DROP: 2
@@ -168,7 +454,31 @@ declare namespace naver {
       type: 'rect' | 'circle' | 'poly'
     }
 
+    /**
+     * Represents a marker on the map
+     * @class Marker
+     * @extends OverlayView
+     * @example
+     * ```typescript
+     * const marker = new naver.maps.Marker({
+     *   position: new naver.maps.LatLng(37.5666805, 126.9784147),
+     *   map: map,
+     *   title: 'Seoul City Hall',
+     *   icon: {
+     *     url: '/marker-icon.png',
+     *     size: new naver.maps.Size(50, 52),
+     *     origin: new naver.maps.Point(0, 0),
+     *     anchor: new naver.maps.Point(25, 26)
+     *   },
+     *   animation: naver.maps.Animation.DROP
+     * });
+     * ```
+     */
     class Marker extends OverlayView {
+      /**
+       * Creates a new Marker instance
+       * @param options - Marker configuration options
+       */
       constructor(options: MarkerOptions)
       setPosition(position: LatLng | LatLngLiteral): void
       getPosition(): LatLng
@@ -196,6 +506,10 @@ declare namespace naver {
       getOpacity(): number
     }
 
+    /**
+     * Configuration options for Marker
+     * @interface MarkerOptions
+     */
     interface MarkerOptions {
       position: LatLng | LatLngLiteral
       map?: Map
@@ -212,6 +526,10 @@ declare namespace naver {
       animation?: Animation
     }
 
+    /**
+     * Image icon configuration for markers
+     * @interface ImageIcon
+     */
     interface ImageIcon {
       url: string
       size?: Size
@@ -222,6 +540,10 @@ declare namespace naver {
       spriteOrigin?: Point
     }
 
+    /**
+     * Symbol icon configuration for markers using SVG paths
+     * @interface SymbolIcon
+     */
     interface SymbolIcon {
       path: string | SymbolPath
       fillColor?: string
@@ -234,12 +556,26 @@ declare namespace naver {
       anchor?: Point
     }
 
+    /**
+     * HTML icon configuration for markers with custom HTML content
+     * @interface HtmlIcon
+     */
     interface HtmlIcon {
       content: string
       size?: Size
       anchor?: Point
     }
 
+    /**
+     * Represents a two-dimensional size
+     * @class Size
+     * @example
+     * ```typescript
+     * const size = new naver.maps.Size(100, 50);
+     * console.log(size.width); // 100
+     * console.log(size.height); // 50
+     * ```
+     */
     class Size {
       constructor(width: number, height: number)
       width: number
@@ -248,6 +584,16 @@ declare namespace naver {
       toString(): string
     }
 
+    /**
+     * Represents a two-dimensional point in pixel coordinates
+     * @class Point
+     * @example
+     * ```typescript
+     * const point = new naver.maps.Point(10, 20);
+     * const shifted = point.add(new naver.maps.Point(5, 5));
+     * console.log(shifted.x, shifted.y); // 15, 25
+     * ```
+     */
     class Point {
       constructor(x: number, y: number)
       x: number
@@ -261,6 +607,11 @@ declare namespace naver {
       distanceTo(point: Point): number
     }
 
+    /**
+     * Predefined symbol paths for marker icons
+     * @enum {number}
+     * @readonly
+     */
     enum SymbolPath {
       BACKWARD_CLOSED_ARROW = 1,
       BACKWARD_OPEN_ARROW = 2,
@@ -269,7 +620,35 @@ declare namespace naver {
       FORWARD_OPEN_ARROW = 5,
     }
 
+    /**
+     * Represents an information window that can be attached to a map or marker
+     * @class InfoWindow
+     * @extends OverlayView
+     * @example
+     * ```typescript
+     * const infoWindow = new naver.maps.InfoWindow({
+     *   content: '<div style="padding:10px;">Hello World!</div>',
+     *   maxWidth: 300,
+     *   backgroundColor: '#fff',
+     *   borderColor: '#333',
+     *   borderWidth: 2,
+     *   anchorSize: new naver.maps.Size(20, 24),
+     *   anchorSkew: true,
+     *   pixelOffset: new naver.maps.Point(0, -10)
+     * });
+     * 
+     * // Open at marker position
+     * infoWindow.open(map, marker);
+     * 
+     * // Open at specific position
+     * infoWindow.open(map, new naver.maps.LatLng(37.5, 127));
+     * ```
+     */
     class InfoWindow extends OverlayView {
+      /**
+       * Creates a new InfoWindow instance
+       * @param options - InfoWindow configuration options
+       */
       constructor(options: InfoWindowOptions)
       open(map: Map, anchor?: Marker | LatLng): void
       close(): void
@@ -282,24 +661,66 @@ declare namespace naver {
       getZIndex(): number
     }
 
+    /**
+     * Configuration options for InfoWindow
+     * @interface InfoWindowOptions
+     */
     interface InfoWindowOptions {
+      /** The content to display in the info window (HTML string or element) */
       content: string | HTMLElement
+      /** The initial position of the info window */
       position?: LatLng | LatLngLiteral
-      maxWidth?: number  // default: 0 (no limit)
+      /** Maximum width in pixels (0 = no limit) @default 0 */
+      maxWidth?: number
+      /** Pixel offset from the anchor position */
       pixelOffset?: Point
-      zIndex?: number  // default: 0
+      /** Z-index for stacking order @default 0 */
+      zIndex?: number
+      /** Whether to disable the anchor (tail) display */
       disableAnchor?: boolean
+      /** Whether to disable automatic panning when opened */
       disableAutoPan?: boolean
-      anchorSkew?: boolean  // enable skew effect on speech bubble tail
-      anchorSize?: Size  // default: width 20, height 24
-      anchorColor?: string  // default: "#fff"
-      borderColor?: string  // default: "#333"
-      borderWidth?: number  // default: 1
-      backgroundColor?: string  // default: "#fff"
-      autoPan?: boolean  // whether to auto pan when opened
-      autoPanMargin?: Size  // margin from map edges when auto panning
+      /** Enable skew effect on speech bubble tail for 3D appearance */
+      anchorSkew?: boolean
+      /** Size of the anchor (tail) @default Size(20, 24) */
+      anchorSize?: Size
+      /** Color of the anchor @default "#fff" */
+      anchorColor?: string
+      /** Border color @default "#333" */
+      borderColor?: string
+      /** Border width in pixels @default 1 */
+      borderWidth?: number
+      /** Background color @default "#fff" */
+      backgroundColor?: string
+      /** Whether to auto pan the map to show the info window */
+      autoPan?: boolean
+      /** Margin from map edges when auto panning */
+      autoPanMargin?: Size
     }
 
+    /**
+     * Marker clustering for grouping nearby markers
+     * @class MarkerClustering
+     * @example
+     * ```typescript
+     * const clustering = new naver.maps.MarkerClustering({
+     *   minClusterSize: 2,
+     *   maxZoom: 15,
+     *   map: map,
+     *   markers: markers,
+     *   gridSize: 60,
+     *   icons: [{
+     *     url: '/cluster-icon.png',
+     *     size: new naver.maps.Size(40, 40),
+     *     textColor: '#fff',
+     *     textSize: 12
+     *   }],
+     *   stylingFunction: (clusterMarker, count) => {
+     *     clusterMarker.setTitle(`Cluster of ${count} markers`);
+     *   }
+     * });
+     * ```
+     */
     class MarkerClustering {
       constructor(options: MarkerClusteringOptions)
       setMap(map: Map | null): void
@@ -352,7 +773,17 @@ declare namespace naver {
       getBounds(): LatLngBounds
     }
 
-    // Stroke style type definitions
+    /**
+     * Stroke style types for lines and shapes
+     * @typedef {string} StrokeStyleType
+     * @example
+     * ```typescript
+     * const polyline = new naver.maps.Polyline({
+     *   strokeStyle: 'dash',
+     *   strokeColor: '#FF0000'
+     * });
+     * ```
+     */
     type StrokeStyleType = 'solid' | 'shortdash' | 'shortdot' | 'shortdashdot' | 
       'shortdashdotdot' | 'dot' | 'dash' | 'dashdot' | 'longdash' | 
       'longdashdot' | 'longdashdotdot'
@@ -361,7 +792,24 @@ declare namespace naver {
     
     type StrokeLineJoinType = 'miter' | 'round' | 'bevel'
 
-    // Polyline overlay
+    /**
+     * Polyline overlay for drawing lines on the map
+     * @class Polyline
+     * @extends OverlayView
+     * @example
+     * ```typescript
+     * const polyline = new naver.maps.Polyline({
+     *   map: map,
+     *   path: [
+     *     new naver.maps.LatLng(37.5, 127),
+     *     new naver.maps.LatLng(37.6, 127.1)
+     *   ],
+     *   strokeColor: '#FF0000',
+     *   strokeWeight: 5,
+     *   strokeOpacity: 0.8
+     * });
+     * ```
+     */
     class Polyline extends OverlayView {
       constructor(options: PolylineOptions)
       setPath(path: (LatLng | LatLngLiteral)[]): void
@@ -401,7 +849,27 @@ declare namespace naver {
 
     type PointingIcon = 'circle' | 'arrow' | 'openarrow' | 'blockarrow'
 
-    // Polygon overlay
+    /**
+     * Polygon overlay for drawing filled areas on the map
+     * @class Polygon
+     * @extends OverlayView
+     * @example
+     * ```typescript
+     * const polygon = new naver.maps.Polygon({
+     *   map: map,
+     *   paths: [
+     *     new naver.maps.LatLng(37.5, 127),
+     *     new naver.maps.LatLng(37.6, 127),
+     *     new naver.maps.LatLng(37.6, 127.1),
+     *     new naver.maps.LatLng(37.5, 127.1)
+     *   ],
+     *   fillColor: '#FF0000',
+     *   fillOpacity: 0.3,
+     *   strokeColor: '#FF0000',
+     *   strokeWeight: 2
+     * });
+     * ```
+     */
     class Polygon extends OverlayView {
       constructor(options: PolygonOptions)
       setPaths(paths: (LatLng | LatLngLiteral)[] | (LatLng | LatLngLiteral)[][]): void
@@ -429,7 +897,23 @@ declare namespace naver {
       visible?: boolean
     }
 
-    // Circle overlay
+    /**
+     * Circle overlay for drawing circles on the map
+     * @class Circle
+     * @extends OverlayView
+     * @example
+     * ```typescript
+     * const circle = new naver.maps.Circle({
+     *   map: map,
+     *   center: new naver.maps.LatLng(37.5, 127),
+     *   radius: 500, // 500 meters
+     *   fillColor: '#FF0000',
+     *   fillOpacity: 0.3,
+     *   strokeColor: '#FF0000',
+     *   strokeWeight: 2
+     * });
+     * ```
+     */
     class Circle extends OverlayView {
       constructor(options: CircleOptions)
       setCenter(center: LatLng | LatLngLiteral): void
@@ -539,7 +1023,35 @@ declare namespace naver {
       zIndex?: number
     }
 
-    // Data layer for GeoJSON and feature management
+    /**
+     * Data layer for managing and displaying GeoJSON features
+     * @class Data
+     * @example
+     * ```typescript
+     * const dataLayer = new naver.maps.Data();
+     * 
+     * // Add GeoJSON data
+     * dataLayer.addGeoJson({
+     *   type: 'Feature',
+     *   geometry: {
+     *     type: 'Point',
+     *     coordinates: [127, 37.5]
+     *   },
+     *   properties: {
+     *     name: 'Seoul'
+     *   }
+     * });
+     * 
+     * // Set style
+     * dataLayer.setStyle({
+     *   fillColor: '#FF0000',
+     *   strokeWeight: 2
+     * });
+     * 
+     * // Attach to map
+     * dataLayer.setMap(map);
+     * ```
+     */
     class Data {
       constructor()
       add(feature: Data.Feature | Data.FeatureOptions): Data.Feature
@@ -900,7 +1412,25 @@ declare namespace naver {
       remove(): void
     }
 
-    // Event handling with generics
+    /**
+     * Event utility class for managing map and overlay events
+     * @class Event
+     * @example
+     * ```typescript
+     * // Add event listener to map
+     * const listener = naver.maps.Event.addListener(map, 'click', (e) => {
+     *   console.log('Clicked at:', e.coord);
+     * });
+     * 
+     * // Remove listener later
+     * naver.maps.Event.removeListener(listener);
+     * 
+     * // Add one-time listener
+     * naver.maps.Event.once(map, 'idle', () => {
+     *   console.log('Map loaded');
+     * });
+     * ```
+     */
     class Event {
       /**
        * Adds an event listener to the specified instance
@@ -1006,7 +1536,33 @@ declare namespace naver {
       ): boolean
     }
 
-    // Utility functions
+    /**
+     * Service utilities for geocoding and reverse geocoding
+     * @namespace Service
+     * @example
+     * ```typescript
+     * // Geocode an address
+     * naver.maps.Service.geocode({
+     *   query: '서울특별시 중구 세종대로 110'
+     * }, (status, response) => {
+     *   if (status === naver.maps.Service.Status.OK) {
+     *     const result = response.v2.addresses[0];
+     *     console.log('Coordinates:', result.x, result.y);
+     *   }
+     * });
+     * 
+     * // Reverse geocode coordinates
+     * naver.maps.Service.reverseGeocode({
+     *   coords: new naver.maps.LatLng(37.5, 127),
+     *   orders: 'roadaddr,addr'
+     * }, (status, response) => {
+     *   if (status === naver.maps.Service.Status.OK) {
+     *     const result = response.v2.results[0];
+     *     console.log('Address:', result.land.name);
+     *   }
+     * });
+     * ```
+     */
     namespace Service {
       /**
        * Geocode an address to coordinates
@@ -1124,15 +1680,37 @@ declare namespace naver {
         code: string
       }
 
+      /**
+       * Status codes for geocoding service responses
+       * @enum {number}
+       * @readonly
+       */
       enum Status {
+        /** Request successful */
         OK = 200,
+        /** Server error */
         ERROR = 500,
+        /** Invalid request parameters */
         INVALID_REQUEST = 400,
+        /** Unknown error occurred */
         UNKNOWN_ERROR = 501
       }
     }
 
-    // Coordinate Converter namespace
+    /**
+     * Coordinate conversion utilities between different projection systems
+     * @namespace CoordinateConverter
+     * @example
+     * ```typescript
+     * // Convert TM128 to WGS84
+     * const tm128 = new naver.maps.Point(198297, 451118);
+     * const latlng = naver.maps.CoordinateConverter.fromTM128ToLatLng(tm128);
+     * 
+     * // Convert WGS84 to Web Mercator (EPSG:3857)
+     * const coord = new naver.maps.LatLng(37.5, 127);
+     * const mercator = naver.maps.CoordinateConverter.fromLatLngToEPSG3857(coord);
+     * ```
+     */
     namespace CoordinateConverter {
       /**
        * Convert TM128 coordinates to WGS84 LatLng
@@ -1165,7 +1743,27 @@ declare namespace naver {
       function fromLatLngToUTMK(latlng: LatLng): Point
     }
 
-    // Projection system classes
+    /**
+     * Base class for map projections
+     * @class Projection
+     * @example
+     * ```typescript
+     * // Get the default projection (Web Mercator)
+     * const projection = naver.maps.Projection.getDefault();
+     * 
+     * // Convert coordinate to pixel
+     * const pixel = projection.fromCoordToPoint(
+     *   new naver.maps.LatLng(37.5, 127)
+     * );
+     * 
+     * // Calculate distance between two points
+     * const distance = projection.getDistance(
+     *   new naver.maps.LatLng(37.5, 127),
+     *   new naver.maps.LatLng(37.6, 127.1)
+     * );
+     * console.log('Distance:', distance, 'meters');
+     * ```
+     */
     class Projection {
       /**
        * Get the default projection (EPSG:3857 - Web Mercator)
@@ -1285,6 +1883,12 @@ declare namespace naver {
     }
 
     // Control classes - OverlayView is the base class
+    /**
+     * Base abstract class for all map overlays
+     * @abstract
+     * @class OverlayView
+     * @extends KVO
+     */
     abstract class OverlayView extends KVO {
       setMap(map: Map | null): void
       getMap(): Map | null
@@ -1308,7 +1912,28 @@ declare namespace naver {
       floatPane: HTMLElement
     }
 
+    /**
+     * Custom control that can be added to the map
+     * @class CustomControl
+     * @extends KVO
+     * @example
+     * ```typescript
+     * // Create a custom control
+     * const customControl = new naver.maps.CustomControl(
+     *   '<div style="padding:10px;background:white;">Custom Control</div>',
+     *   { position: naver.maps.Position.TOP_LEFT }
+     * );
+     * 
+     * // Add to map
+     * customControl.setMap(map);
+     * ```
+     */
     class CustomControl extends KVO {
+      /**
+       * Creates a new CustomControl instance
+       * @param html - HTML string content for the control
+       * @param options - Control configuration options
+       */
       constructor(html: string, options?: CustomControlOptions)
       setMap(map: Map | null): void
       getElement(): HTMLElement
@@ -1333,6 +1958,11 @@ declare namespace naver {
       legendDisabled?: boolean
     }
 
+    /**
+     * Zoom control style options
+     * @enum {number}
+     * @readonly
+     */
     enum ZoomControlStyle {
       LARGE = 0,
       SMALL = 1,
@@ -1361,9 +1991,14 @@ declare namespace naver {
     interface MapTypeControlOptions {
       position?: number
       style?: MapTypeControlStyle
-      mapTypeIds?: string[] | MapTypeId[]
+      mapTypeIds?: string[]
     }
 
+    /**
+     * Map type control style options
+     * @enum {number}
+     * @readonly
+     */
     enum MapTypeControlStyle {
       BUTTON = 0,
       DROPDOWN = 1,
@@ -1387,7 +2022,21 @@ declare namespace naver {
       getTileUrl?(x: number, y: number, z: number): string
     }
 
-    // Map Type IDs
+    /**
+     * Map type identifiers
+     * @enum {string}
+     * @readonly
+     * @example
+     * ```typescript
+     * // Set map type
+     * map.setMapTypeId(naver.maps.MapTypeId.SATELLITE);
+     * 
+     * // Use in map options
+     * const map = new naver.maps.Map('map', {
+     *   mapTypeId: naver.maps.MapTypeId.HYBRID
+     * });
+     * ```
+     */
     const MapTypeId: {
       NORMAL: string
       TERRAIN: string
@@ -1438,3 +2087,4 @@ export type NaverStrokeLineJoinType = naver.maps.StrokeLineJoinType
 export type NaverGeoJsonObject = naver.maps.GeoJsonObject
 export type NaverGeoJsonFeature = naver.maps.GeoJsonFeature
 export type NaverGeoJsonFeatureCollection = naver.maps.GeoJsonFeatureCollection
+export type NaverInfoWindow = naver.maps.InfoWindow
