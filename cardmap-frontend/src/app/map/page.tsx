@@ -280,7 +280,7 @@ export default function MapPage() {
           </div>
         </header>
         
-        <main className="flex-1 flex relative">
+        <main className="flex-1 flex relative overflow-hidden">
           {/* 사이드바 - 가맹점 목록 또는 경로 계획 */}
           <div className={`transition-all duration-300 ${sidebarOpen ? 'w-96' : 'w-0'} overflow-hidden border-r border-gray-200 bg-white`}>
             {sidebarOpen && (
@@ -364,7 +364,7 @@ export default function MapPage() {
           
           {/* 선택된 가맹점 정보 */}
           {selectedMerchant && (
-            <div className="absolute bottom-4 left-4 right-4 md:left-auto md:right-4 bg-white rounded-lg shadow-lg p-4 max-w-md animate-in slide-in-from-bottom duration-200">
+            <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 bg-white rounded-lg shadow-lg p-4 max-w-md z-50 animate-in slide-in-from-bottom duration-200">
               <button
                 onClick={() => setSelectedMerchant(null)}
                 className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
