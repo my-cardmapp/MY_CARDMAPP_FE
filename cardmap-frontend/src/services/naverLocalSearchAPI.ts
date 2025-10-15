@@ -38,10 +38,8 @@ export interface CoordinateSearchOptions extends SearchOptions {
   radius?: number        // 검색 반경 (미터)
 }
 
-// API 설정
-const NAVER_LOCAL_SEARCH_API_URL = 'https://openapi.naver.com/v1/search/local.json'
-const CLIENT_ID = process.env.NEXT_PUBLIC_NAVER_CLIENT_ID || ''
-const CLIENT_SECRET = process.env.NEXT_PUBLIC_NAVER_CLIENT_SECRET || ''
+// API 설정 - Next.js API 라우트를 통해 프록시
+const NAVER_LOCAL_SEARCH_API_URL = '/api/naver/local-search'
 
 /**
  * 네이버 좌표계를 WGS84 (위도/경도)로 변환
@@ -152,10 +150,6 @@ export const naverLocalSearchAPI = {
 
     const response = await fetch(`${NAVER_LOCAL_SEARCH_API_URL}?${params.toString()}`, {
       method: 'GET',
-      headers: {
-        'X-Naver-Client-Id': CLIENT_ID,
-        'X-Naver-Client-Secret': CLIENT_SECRET,
-      },
     })
 
     if (!response.ok) {

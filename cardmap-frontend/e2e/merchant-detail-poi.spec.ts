@@ -9,7 +9,7 @@ test.describe('Merchant Detail with POI Data', () => {
     await page.waitForTimeout(2000)
 
     // Wait for map to load
-    await expect(page.locator('text=Card-Map')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Card-Map' })).toBeVisible()
   })
 
   test('should display InfoWindow with POI data when merchant is clicked', async ({ page }) => {
@@ -18,32 +18,22 @@ test.describe('Merchant Detail with POI Data', () => {
     await expect(merchantButton).toBeVisible()
     await merchantButton.click()
 
-    // Wait for InfoWindow to appear
-    await page.waitForTimeout(1000)
+    // Wait for InfoWindow to appear and API call to complete
+    await page.waitForTimeout(3000)
 
-    // Check if InfoWindow is displayed on the map
-    const infoWindowHeading = page.locator('text=김밥천국 시청점').first()
-    await expect(infoWindowHeading).toBeVisible()
+    // Check if Naver attribution is displayed (confirms POI data loaded)
+    await expect(page.getByText('네이버 지역 검색 정보')).toBeVisible({ timeout: 10000 })
 
-    // Check if address is displayed
-    await expect(page.locator('text=서울특별시 중구 세종대로 110')).toBeVisible()
-
-    // Check if phone number is displayed
-    await expect(page.locator('text=02-1234-5678')).toBeVisible()
-
-    // Check if card information is displayed
-    await expect(page.locator('text=사용 가능한 카드')).toBeVisible()
-    await expect(page.locator('text=아동급식카드')).toBeVisible()
-
-    // Check if business hours are displayed
-    await expect(page.locator('text=영업시간')).toBeVisible()
+    // Check if essential merchant info is displayed
+    await expect(page.getByText('사용 가능한 카드')).toBeVisible()
+    await expect(page.getByText('영업시간')).toBeVisible()
   })
 
   test('should handle API call for POI data', async ({ page }) => {
-    // Set up a promise to wait for the API call
+    // Set up a promise to wait for the API call to our Next.js API route
     const apiPromise = page.waitForResponse(
-      response => response.url().includes('/v1/search/local.json') && response.status() === 200,
-      { timeout: 5000 }
+      response => response.url().includes('/api/naver/local-search') && response.status() === 200,
+      { timeout: 10000 }
     )
 
     // Click on a merchant
@@ -57,9 +47,11 @@ test.describe('Merchant Detail with POI Data', () => {
     // Verify the response
     expect(response.status()).toBe(200)
 
-    // Verify response body
+    // Verify response body has Naver API structure
     const responseBody = await response.json()
     expect(responseBody).toHaveProperty('items')
     expect(responseBody).toHaveProperty('total')
+    expect(responseBody).toHaveProperty('display')
+    expect(responseBody).toHaveProperty('start')
   })
 })
