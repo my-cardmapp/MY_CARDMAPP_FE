@@ -8,7 +8,7 @@ import MerchantList from '@/components/merchant/MerchantList'
 import { SearchBar } from '@/components/search/SearchBar'
 import { RoutePlanner } from '@/components/route/RoutePlanner'
 import { RouteLayer } from '@/components/map/RouteLayer'
-import MerchantInfoWindowEnhanced from '@/components/map/MerchantInfoWindowEnhanced'
+import MerchantDetailPanel from '@/components/merchant/MerchantDetailPanel'
 import { sampleMerchants as MOCK_MERCHANTS } from '@/data/sampleMerchants'
 import type { Merchant } from '@/types/merchant'
 import type { MapBounds } from '@/hooks/useMapBounds'
@@ -17,20 +17,6 @@ import type { Route, Location } from '@/types'
 // 전체 카드 타입 정의
 const ALL_CARD_TYPES = ['CHILD_MEAL', 'CULTURE_NURI', 'LOCAL_CURRENCY'] as const
 
-// InfoWindow 래퍼 컴포넌트 (MapProvider 내부에서 사용)
-function InfoWindowLayer({ merchant, onClose }: { merchant: Merchant | null; onClose: () => void }) {
-  const { map } = useMapContext()
-
-  if (!map) return null
-
-  return (
-    <MerchantInfoWindowEnhanced
-      map={map}
-      merchant={merchant}
-      onClose={onClose}
-    />
-  )
-}
 
 export default function MapPage() {
   const router = useRouter()
@@ -378,50 +364,11 @@ export default function MapPage() {
               }}
             />
 
-            {/* POI InfoWindow Layer */}
-            <InfoWindowLayer
+            {/* Unified Merchant Detail Panel */}
+            <MerchantDetailPanel
               merchant={selectedMerchant}
               onClose={() => setSelectedMerchant(null)}
             />
-
-          {/* 선택된 가맹점 정보 (하단 카드) */}
-          {selectedMerchant && (
-            <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 bg-white rounded-lg shadow-lg p-4 max-w-md z-50 animate-in slide-in-from-bottom duration-200">
-              <button
-                onClick={() => setSelectedMerchant(null)}
-                className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
-                aria-label="닫기"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-              
-              <h3 className="font-bold text-lg pr-8">{selectedMerchant.name}</h3>
-              <p className="text-gray-600 text-sm mt-1">{selectedMerchant.address}</p>
-              
-              <div className="flex gap-2 mt-3">
-                {selectedMerchant.cards.map(card => (
-                  <span 
-                    key={card.code}
-                    className="text-xs px-2 py-1 rounded font-medium"
-                    style={{ 
-                      backgroundColor: card.colorHex + '20',
-                      color: card.colorHex 
-                    }}
-                  >
-                    {card.name}
-                  </span>
-                ))}
-              </div>
-              
-              {selectedMerchant.phone && (
-                <p className="text-sm text-gray-600 mt-3">
-                  📞 {selectedMerchant.phone}
-                </p>
-              )}
-            </div>
-          )}
 
             {/* Bounds info (debug) */}
             {currentBounds && (
