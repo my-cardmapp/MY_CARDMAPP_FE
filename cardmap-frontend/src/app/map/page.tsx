@@ -2,12 +2,13 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { MapProvider } from '@/contexts/MapContext'
+import { MapProvider, useMapContext } from '@/contexts/MapContext'
 import MapContainer from '@/components/map/MapContainer'
 import MerchantList from '@/components/merchant/MerchantList'
 import { SearchBar } from '@/components/search/SearchBar'
 import { RoutePlanner } from '@/components/route/RoutePlanner'
 import { RouteLayer } from '@/components/map/RouteLayer'
+import MerchantInfoWindowEnhanced from '@/components/map/MerchantInfoWindowEnhanced'
 import { sampleMerchants as MOCK_MERCHANTS } from '@/data/sampleMerchants'
 import type { Merchant } from '@/types/merchant'
 import type { MapBounds } from '@/hooks/useMapBounds'
@@ -15,6 +16,21 @@ import type { Route, Location } from '@/types'
 
 // 전체 카드 타입 정의
 const ALL_CARD_TYPES = ['CHILD_MEAL', 'CULTURE_NURI', 'LOCAL_CURRENCY'] as const
+
+// InfoWindow 래퍼 컴포넌트 (MapProvider 내부에서 사용)
+function InfoWindowLayer({ merchant, onClose }: { merchant: Merchant | null; onClose: () => void }) {
+  const { map } = useMapContext()
+
+  if (!map) return null
+
+  return (
+    <MerchantInfoWindowEnhanced
+      map={map}
+      merchant={merchant}
+      onClose={onClose}
+    />
+  )
+}
 
 export default function MapPage() {
   const router = useRouter()
@@ -361,8 +377,14 @@ export default function MapPage() {
                 strokeOpacity: 0.8,
               }}
             />
-          
-          {/* 선택된 가맹점 정보 */}
+
+            {/* POI InfoWindow Layer */}
+            <InfoWindowLayer
+              merchant={selectedMerchant}
+              onClose={() => setSelectedMerchant(null)}
+            />
+
+          {/* 선택된 가맹점 정보 (하단 카드) */}
           {selectedMerchant && (
             <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 bg-white rounded-lg shadow-lg p-4 max-w-md z-50 animate-in slide-in-from-bottom duration-200">
               <button
