@@ -1,0 +1,125 @@
+# Task ID: 13
+# Title: Setup Spring Boot Backend Project with Database and API Structure
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Initialize Spring Boot 3.2 project with PostgreSQL/PostGIS integration, JPA entities for core domain models, and RESTful API controllers with proper project structure
+# Details:
+1. Create Spring Boot 3.2 project with Java 21 using Spring Initializr
+   - Dependencies: Spring Web, Spring Data JPA, PostgreSQL Driver, Spring Security, Spring Cache, Spring Actuator
+   - Configure multi-module structure: domain, repository, service, controller, common
+
+2. Configure PostgreSQL with PostGIS extension
+   - Set up application.yml with datasource configuration
+   - Add PostGIS dependency and spatial hibernate types
+   - Configure connection pooling with HikariCP
+   - Enable query logging for development profile
+
+3. Create core JPA entities with proper relationships:
+   - Card entity: id, code, name, issuer, colorHex, iconUrl, isActive
+   - Merchant entity: id, merchantCode, name, address, location (Point), phone, businessHours (JSON), categoryId
+   - Category entity: id, code, name, icon, parentId (self-referencing)
+   - MerchantCard join table with usage restrictions
+   - User entity: id, email, password, name, role, createdAt
+   - Add spatial indexes for location queries
+
+4. Implement repository layer with Spring Data JPA:
+   - CardRepository with findByCode, findAllActive methods
+   - MerchantRepository with spatial queries (findByLocationNear, findWithinRadius)
+   - Custom query methods using @Query for complex searches
+   - Implement pagination and sorting support
+
+5. Create service layer with business logic:
+   - MerchantService: search, nearby, getDetails methods
+   - CardService: getAvailableCards, getCardMerchants
+   - Implement transaction management with @Transactional
+   - Add service layer caching annotations
+
+6. Build RESTful controllers with proper structure:
+   - MerchantController: GET /merchants, /merchants/{id}, /merchants/nearby, /merchants/search
+   - CardController: GET /cards, /cards/{code}
+   - AuthController: POST /auth/login, /auth/refresh (stub for now)
+   - RouteController: POST /routes/calculate (stub for now)
+   - Add request/response DTOs with validation
+   - Implement global exception handling with @ControllerAdvice
+
+7. Configure cross-cutting concerns:
+   - CORS configuration for frontend integration
+   - Request/response logging interceptor
+   - API versioning setup (URL path versioning)
+   - Jackson configuration for JSON serialization
+   - Enable compression for responses
+
+# Test Strategy:
+1. Verify Spring Boot application starts successfully with embedded PostgreSQL (Testcontainers)
+2. Test database connectivity and PostGIS spatial functions work correctly
+3. Validate JPA entities can be persisted and retrieved with proper relationships
+4. Test repository methods return expected results, especially spatial queries
+5. Verify service layer transactions and caching behavior
+6. Test all REST endpoints return proper status codes and response formats
+7. Validate request validation and error handling returns appropriate error responses
+8. Ensure CORS headers are present for cross-origin requests
+9. Test pagination and sorting functionality on list endpoints
+10. Verify application metrics are exposed via Actuator endpoints
+
+# Subtasks:
+## 1. Initialize Spring Boot 3.2 project with core dependencies [pending]
+### Dependencies: None
+### Description: Create Spring Boot 3.2 project using Spring Initializr with Java 21 and configure essential dependencies
+### Details:
+Use Spring Initializr to create project with dependencies: Spring Web, Spring Data JPA, PostgreSQL Driver, Spring Security, Spring Cache, Spring Actuator, Spring Validation. Configure maven/gradle build with Java 21 target. Set up basic application.properties with server.port=8080 and spring.application.name=card-map-api
+
+## 2. Configure multi-module project structure [pending]
+### Dependencies: 13.1
+### Description: Set up proper package structure following Domain-Driven Design principles with clear separation of concerns
+### Details:
+Create package structure: com.cardmap.domain (entities, value objects), com.cardmap.repository (Spring Data repositories), com.cardmap.service (business logic), com.cardmap.controller (REST endpoints), com.cardmap.common (shared utilities, constants), com.cardmap.config (configuration classes), com.cardmap.dto (request/response DTOs), com.cardmap.exception (custom exceptions)
+
+## 3. Set up PostgreSQL with PostGIS configuration [pending]
+### Dependencies: 13.1
+### Description: Configure PostgreSQL database connection with PostGIS extension for spatial queries and HikariCP connection pooling
+### Details:
+Add PostGIS dependencies: hibernate-spatial, postgis-jdbc. Configure application.yml with datasource properties, HikariCP pool settings (minimum-idle: 5, maximum-pool-size: 20, connection-timeout: 30000). Add dialect configuration for spatial queries: spring.jpa.properties.hibernate.dialect=org.hibernate.spatial.dialect.postgis.PostgisPG10Dialect. Enable SQL logging for dev profile
+
+## 4. Create core domain entities with JPA mappings [pending]
+### Dependencies: 13.2, 13.3
+### Description: Implement JPA entities for Card, Merchant, Category, MerchantCard, and User with proper relationships and constraints
+### Details:
+Create @Entity classes with proper annotations: Card (id, code @Column(unique=true), name, issuer, colorHex, iconUrl, isActive), Merchant (id, merchantCode, name, @Type(type="org.locationtech.jts.geom.Point") location, address, phone, @Type(type="json") businessHours, @ManyToOne category), Category (id, code, name, icon, @ManyToOne parent self-reference), MerchantCard (@EmbeddedId with merchant_id and card_id, @Type(type="json") usageRestriction, lastVerifiedAt), User (id, email @Column(unique=true), password, name, role @Enumerated, createdAt)
+
+## 5. Add database indexes and spatial configuration [pending]
+### Dependencies: 13.4
+### Description: Configure database indexes including spatial indexes for location-based queries and performance optimization
+### Details:
+Add @Table annotations with indexes: Merchant entity with @Index on location field using GIST, merchantCode index, composite index on (categoryId, isActive). Add spatial index creation in schema.sql or Flyway migration: CREATE INDEX idx_merchant_location ON merchant USING GIST(location). Add indexes for search_vector tsvector field for full-text search. Configure batch fetch size and lazy loading strategies
+
+## 6. Implement repository layer with spatial queries [pending]
+### Dependencies: 13.4, 13.5
+### Description: Create Spring Data JPA repositories with custom spatial query methods for location-based merchant searches
+### Details:
+Create repositories: CardRepository (findByCode, findByIsActiveTrue with pagination), MerchantRepository with spatial queries using @Query("SELECT m FROM Merchant m WHERE distance(m.location, :point) < :radius"), implement findByLocationNear with ST_DWithin PostGIS function, add complex search with specifications for filtering by cards, categories, and keywords. Create custom repository implementations for complex spatial aggregations
+
+## 7. Build service layer with caching implementation [pending]
+### Dependencies: 13.6
+### Description: Create service classes implementing business logic with transaction management and Redis caching
+### Details:
+Implement services: MerchantService with @Transactional methods for search, findNearby(Point location, double radius, List<String> cardTypes), getDetails with @Cacheable. CardService with getAvailableCards @Cacheable("cards"), getCardMerchants. Configure Redis cache with TTL settings. Add @CacheEvict for data modifications. Implement circuit breaker pattern for external service calls using Resilience4j
+
+## 8. Create REST controllers with DTOs and validation [pending]
+### Dependencies: 13.7
+### Description: Implement RESTful API endpoints with proper request/response DTOs, input validation, and OpenAPI documentation
+### Details:
+Create controllers: MerchantController with @GetMapping for /merchants (with query params), /merchants/{id}, /merchants/nearby (lat, lng, radius params), /merchants/search. Implement DTOs: MerchantSearchRequest with @Valid constraints, MerchantResponse with location as lat/lng. Add @RestControllerAdvice for global exception handling. Configure OpenAPI 3.0 annotations for Swagger documentation. Implement API versioning with /api/v1 prefix
+
+## 9. Configure security and CORS settings [pending]
+### Dependencies: 13.8
+### Description: Set up Spring Security with JWT authentication structure and CORS configuration for frontend integration
+### Details:
+Configure SecurityFilterChain bean with permitAll() for public endpoints initially, prepare JWT token filter structure for future implementation. Set up CORS with allowed origins from environment variables, support preflight requests. Configure method security with @EnableGlobalMethodSecurity. Add security headers (HSTS, X-Frame-Options, CSP). Implement rate limiting with Bucket4j for API protection
+
+## 10. Add monitoring and logging configuration [pending]
+### Dependencies: 13.9
+### Description: Configure application monitoring with Spring Actuator, structured logging, and request/response interceptors
+### Details:
+Configure Spring Actuator with health, metrics, info endpoints exposed. Add custom health indicators for PostGIS and Redis. Implement request/response logging interceptor with correlation IDs, exclude sensitive data. Configure Logback with JSON encoder for structured logs. Add Micrometer metrics for API latency, database query times. Enable distributed tracing preparation with trace/span IDs. Configure graceful shutdown and liveness/readiness probes
+

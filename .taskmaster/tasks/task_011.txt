@@ -1,0 +1,56 @@
+# Task ID: 11
+# Title: Optimize SEO and Web Performance
+# Status: pending
+# Dependencies: 10
+# Priority: medium
+# Description: Implement advanced SEO optimizations and performance improvements for Core Web Vitals compliance
+# Details:
+1. Implement dynamic meta tags with Next.js metadata API
+2. Add structured data (JSON-LD) for local businesses
+3. Create XML sitemap with merchant pages
+4. Optimize images with next/image and WebP format
+5. Implement route prefetching strategies
+6. Add resource hints (preconnect, prefetch)
+7. Optimize Critical CSS delivery
+8. Target Core Web Vitals: LCP < 2.5s, FID < 100ms, CLS < 0.1
+
+# Test Strategy:
+Lighthouse performance score > 95, all Core Web Vitals in green, Google Search Console shows no errors, load time < 3s on 3G
+
+# Subtasks:
+## 1. Implement Dynamic Meta Tags with Next.js 14 Metadata API [pending]
+### Dependencies: None
+### Description: Set up dynamic meta tags for all pages using Next.js 14's metadata API to improve SEO discoverability
+### Details:
+Configure generateMetadata functions in app directory layout and page files. Include dynamic title, description, Open Graph tags (og:title, og:description, og:image, og:type), Twitter Card meta tags, canonical URLs, and viewport settings. Implement metadata for merchant detail pages with dynamic content based on merchant name, address, and supported cards. Add robots meta tags and language alternatives (ko-KR). Ensure proper fallback values for all metadata fields.
+
+## 2. Add Structured Data (JSON-LD) for Local Business Schema [pending]
+### Dependencies: 11.1
+### Description: Implement JSON-LD structured data for merchant pages to enhance search engine understanding and rich snippets
+### Details:
+Create LocalBusiness schema markup for each merchant including name, address, geo coordinates, telephone, opening hours, accepted payment methods (cards), and category. Add Organization schema for the main site. Implement BreadcrumbList schema for navigation. Include AggregateRating schema when reviews are available. Use Next.js Script component with strategy='afterInteractive' for optimal loading. Ensure Korean address format compliance in PostalAddress schema.
+
+## 3. Create Dynamic XML Sitemap with Merchant Pages [pending]
+### Dependencies: None
+### Description: Build dynamic XML sitemap generation for all static and dynamic routes including merchant detail pages
+### Details:
+Implement sitemap.ts in app directory using Next.js 14 sitemap generation. Include all static pages (home, about, cards) with appropriate changefreq and priority. Dynamically generate entries for all merchant pages from database/mock data. Add image sitemap entries for merchant images. Implement sitemap index if total URLs exceed 50,000. Set up robots.txt with sitemap location. Configure automatic sitemap submission to Google Search Console.
+
+## 4. Optimize Images with Next/Image and WebP Format [pending]
+### Dependencies: None
+### Description: Implement comprehensive image optimization strategy using Next.js Image component and modern formats
+### Details:
+Configure Next.js Image component for all merchant images, card icons, and UI assets. Set up automatic WebP/AVIF conversion with fallbacks. Implement responsive image sizing with srcset for different viewports. Add blur placeholders using plaiceholder or similar library. Configure image domains in next.config.js for external images. Optimize map markers with sprite sheets. Implement lazy loading with loading='lazy' for below-fold images. Set proper width/height to prevent layout shift.
+
+## 5. Implement Route Prefetching and Resource Hints [pending]
+### Dependencies: 11.4
+### Description: Set up intelligent prefetching strategies and resource hints to improve perceived performance
+### Details:
+Configure Next.js Link prefetch behavior based on viewport visibility and user interaction patterns. Implement intersection observer for prefetching visible links. Add preconnect hints for external domains (Naver Maps API, CDNs). Use dns-prefetch for third-party services. Implement custom prefetching logic for high-probability navigation paths. Add preload hints for critical fonts and CSS. Configure service worker for offline-first strategy on static assets. Implement predictive prefetching based on user navigation patterns.
+
+## 6. Optimize Critical CSS and Core Web Vitals [pending]
+### Dependencies: 11.5
+### Description: Achieve Core Web Vitals targets through critical CSS optimization and rendering performance improvements
+### Details:
+Extract and inline critical CSS for above-fold content using Next.js built-in CSS optimization. Implement CSS-in-JS code splitting with proper hydration. Remove unused CSS with PurgeCSS in production builds. Optimize font loading with font-display: swap and subset fonts for Korean characters. Minimize main thread work by deferring non-critical JavaScript. Implement progressive hydration for interactive components. Add web-vitals monitoring with real user metrics (RUM). Target LCP < 2.5s by optimizing largest contentful paint element, FID < 100ms with input delay optimization, CLS < 0.1 by reserving space for dynamic content.
+

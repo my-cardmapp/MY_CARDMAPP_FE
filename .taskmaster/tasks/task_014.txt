@@ -1,0 +1,122 @@
+# Task ID: 14
+# Title: Implement public API integration and data collection system for Korean welfare cards
+# Status: pending
+# Dependencies: 13
+# Priority: medium
+# Description: Build a comprehensive data collection system to fetch and synchronize welfare card merchant data from various public APIs including Korean government open data portals, with batch processing capabilities for regular updates
+# Details:
+1. Research and integrate public APIs for welfare card data:
+   - 공공데이터포털 (data.go.kr) APIs for 아동급식카드 가맹점
+   - 문화누리카드 official API endpoints
+   - Regional APIs for 지역사랑상품권 merchants
+   - Document API endpoints, authentication methods, and rate limits
+
+2. Create API client services:
+   - Implement WebClient-based HTTP clients for each data source
+   - Add retry logic with exponential backoff
+   - Configure proper timeouts and connection pooling
+   - Handle various response formats (JSON, XML, CSV)
+
+3. Design batch processing system:
+   - Use Spring Batch for scheduled data synchronization
+   - Implement chunk-based processing (1000 records per chunk)
+   - Create job configurations for daily/weekly updates
+   - Add job monitoring and failure recovery
+
+4. Data transformation and mapping:
+   - Create DTOs for each external API response format
+   - Implement mappers to convert external data to internal domain models
+   - Handle Korean address normalization and geocoding
+   - Validate and clean merchant data (remove duplicates, fix formatting)
+
+5. Implement incremental updates:
+   - Track last sync timestamp for each data source
+   - Implement delta synchronization where APIs support it
+   - Create audit logs for data changes
+   - Handle merchant deactivations and removals
+
+6. Error handling and monitoring:
+   - Implement circuit breakers for external API calls
+   - Create alerts for API failures or data quality issues
+   - Log all API interactions for debugging
+   - Track API usage against quotas
+
+7. Data quality assurance:
+   - Validate merchant coordinates fall within Korea
+   - Check business registration numbers if available
+   - Verify card type assignments make sense for merchant categories
+   - Flag suspicious or incomplete data for manual review
+
+# Test Strategy:
+1. Mock external APIs using WireMock for integration tests
+2. Test batch job execution with small data sets
+3. Verify data transformation accuracy with known test cases
+4. Test retry and circuit breaker behavior under API failures
+5. Validate incremental sync only processes changed records
+6. Performance test batch processing with 100k+ records
+7. Verify geocoding accuracy for Korean addresses
+8. Test data deduplication logic
+9. Monitor API quota usage during testing
+10. Validate scheduled job triggers execute at correct times
+
+# Subtasks:
+## 1. Research and document Korean public APIs for welfare card data [pending]
+### Dependencies: None
+### Description: Investigate and document all available public APIs from Korean government portals for welfare card merchant data, including authentication methods, rate limits, and data formats
+### Details:
+Research 공공데이터포털 (data.go.kr) APIs for 아동급식카드 가맹점 data, including endpoint URLs, required API keys, and response formats. Document 문화누리카드 official API endpoints and authentication requirements. Investigate regional APIs for 지역사랑상품권 merchants across different provinces. Create comprehensive documentation of rate limits, data update frequencies, and available fields for each API. Test API endpoints with sample requests to verify access and data quality.
+
+## 2. Design API client architecture and interfaces [pending]
+### Dependencies: 14.1
+### Description: Create a modular architecture for API clients that can handle different data sources with common interfaces for data fetching and transformation
+### Details:
+Design abstract base classes for API clients with common methods like fetch(), authenticate(), and handleRateLimit(). Create interfaces for data transformation that can handle JSON, XML, and CSV formats. Define configuration classes for each API client including endpoints, credentials, and retry policies. Design a factory pattern for creating appropriate client instances based on data source type. Plan for extensibility to add new data sources in the future.
+
+## 3. Implement WebClient-based HTTP clients for each data source [pending]
+### Dependencies: 14.2
+### Description: Build Spring WebClient-based HTTP clients for each welfare card data API with proper configuration for timeouts, connection pooling, and error handling
+### Details:
+Implement WebClient configuration with connection timeout of 5 seconds and read timeout of 30 seconds. Configure connection pooling with max connections per route. Create separate client beans for 공공데이터포털, 문화누리카드, and regional APIs. Implement request/response logging with appropriate security masking for API keys. Add request interceptors for authentication headers and common parameters. Configure SSL/TLS settings for secure connections.
+
+## 4. Implement retry logic and circuit breakers [pending]
+### Dependencies: 14.3
+### Description: Add resilience patterns including exponential backoff retry logic and circuit breakers to handle API failures gracefully
+### Details:
+Implement retry logic using Spring Retry with exponential backoff starting at 1 second up to 30 seconds with maximum 3 retries. Configure circuit breakers using Resilience4j with failure threshold of 50% and wait duration of 60 seconds. Add specific handling for different HTTP status codes - retry on 5xx errors, skip on 4xx errors. Implement fallback mechanisms to return cached data when circuit is open. Add metrics collection for retry attempts and circuit breaker state changes.
+
+## 5. Create data transformation and mapping layer [pending]
+### Dependencies: 14.3
+### Description: Build comprehensive data transformation services to convert various external API formats to internal domain models with Korean-specific data handling
+### Details:
+Create DTOs for each external API response format including nested structures for merchant details. Implement MapStruct mappers for efficient object mapping with custom converters for Korean address formats. Add Korean address normalization using Kakao or Naver geocoding APIs to standardize addresses and obtain coordinates. Handle character encoding issues for Korean text in different formats. Create validation rules for required fields and data quality checks. Implement deduplication logic based on business registration numbers or merchant names and addresses.
+
+## 6. Design and implement Spring Batch jobs [pending]
+### Dependencies: 14.4, 14.5
+### Description: Create Spring Batch infrastructure for scheduled data synchronization with chunk-based processing and job monitoring
+### Details:
+Configure Spring Batch with in-memory job repository for development and database-backed for production. Create job configurations for daily full sync and hourly incremental updates. Implement ItemReader for each API source with pagination support. Configure chunk size of 1000 records with appropriate commit intervals. Create ItemProcessor for data transformation and validation. Implement ItemWriter with batch insert optimization. Add job listeners for monitoring start/completion and sending notifications on failures.
+
+## 7. Implement incremental update mechanism [pending]
+### Dependencies: 14.6
+### Description: Build system to track and process only changed data since last synchronization to optimize API usage and processing time
+### Details:
+Create sync_metadata table to store last successful sync timestamp for each data source. Implement logic to request only updated records using API query parameters where supported. For APIs without delta support, implement comparison logic to detect changes using checksums. Create audit_log table to track all data modifications with before/after values. Handle merchant deactivations by soft-deleting records and maintaining history. Implement reconciliation process to verify data consistency between external sources and local database.
+
+## 8. Build data quality validation system [pending]
+### Dependencies: 14.5, 14.7
+### Description: Create comprehensive validation system to ensure data quality and flag suspicious or incomplete merchant records for review
+### Details:
+Implement coordinate validation to ensure all locations fall within Korean peninsula boundaries (latitude: 33-39°N, longitude: 124-132°E). Validate business registration numbers using Korean algorithm (사업자등록번호 검증). Create category-card type validation rules (e.g., CHILD_MEAL should not be assigned to bars or adult establishments). Check for required fields completeness and format validity. Implement outlier detection for suspicious patterns like duplicate coordinates or unrealistic business hours. Create data_quality_issues table to track flagged records with issue types and severity levels.
+
+## 9. Implement monitoring and alerting system [pending]
+### Dependencies: 14.4, 14.6, 14.8
+### Description: Build comprehensive monitoring for API health, data quality metrics, and job execution with automated alerting
+### Details:
+Configure Micrometer metrics for API call counts, response times, and error rates per data source. Track API quota usage and remaining limits with alerts at 80% threshold. Monitor batch job execution times, success rates, and record processing counts. Implement health checks for each external API with automatic circuit breaker activation on failures. Create Slack/email alerts for critical issues like API authentication failures or data quality degradation. Build dashboard using Grafana to visualize sync status, data quality trends, and API performance.
+
+## 10. Create API documentation and runbooks [pending]
+### Dependencies: 14.1, 14.9
+### Description: Document the entire data collection system including API specifications, troubleshooting guides, and operational procedures
+### Details:
+Create OpenAPI specifications for internal APIs exposed by the data collection system. Document each external API integration including authentication setup, common issues, and contact information. Write runbooks for common operational tasks like rerunning failed jobs, updating API credentials, and handling quota exhaustion. Create troubleshooting guides for data quality issues with resolution steps. Document data flow diagrams showing the journey from external APIs to database. Include performance tuning guidelines and capacity planning recommendations based on data volumes.
+

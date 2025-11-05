@@ -1,0 +1,81 @@
+# Task ID: 5
+# Title: Create comprehensive mock API service for frontend development
+# Status: pending
+# Dependencies: 2, 3
+# Priority: high
+# Description: Implement mock data for merchants, cards, search, and routes using MSW (Mock Service Worker) or similar to enable complete frontend development without backend dependencies. This serves as the foundational mock API service that other frontend tasks will depend on.
+# Details:
+1. Install and configure MSW (Mock Service Worker) for intercepting API requests in development
+2. Create mock data generators using Faker.js for realistic Korean merchant data:
+   - Generate 1000+ merchants with Korean business names, addresses, phone numbers
+   - Include proper distribution across categories (convenience stores, restaurants, cafes, etc.)
+   - Assign card types realistically (CHILD_MEAL for restaurants/convenience stores, CULTURE_NURI for bookstores/cultural venues)
+3. Implement mock API endpoints:
+   - GET /api/v1/merchants - paginated merchant list with filtering
+   - GET /api/v1/merchants/{id} - detailed merchant info
+   - GET /api/v1/merchants/nearby - location-based search with distance calculations
+   - GET /api/v1/merchants/search - text search with Korean language support
+   - GET /api/v1/cards - available card types
+   - POST /api/v1/routes/calculate - mock route calculations with realistic waypoints
+   - GET /api/v1/routes/optimize - mock route optimization
+4. Create realistic response delays (100-500ms) to simulate network latency
+5. Implement error scenarios (network errors, 404s, 500s) for testing error handling
+6. Generate mock route data with actual Korean street coordinates and turn-by-turn directions
+7. Create mock search suggestions based on actual Korean place names and categories
+8. Implement mock authentication responses for future auth implementation
+9. Add TypeScript types for all mock data structures matching backend API contracts
+10. Create data persistence layer using localStorage for stateful mock operations
+11. Ensure this mock service is available as a dependency for other frontend development tasks
+
+# Test Strategy:
+Verify MSW intercepts all API calls in development environment, test mock data includes proper Korean characters and formatting, validate response times simulate realistic network conditions, ensure error scenarios trigger appropriate error handling, verify mock search returns relevant results with Korean query support, test pagination works correctly with large datasets, validate mock routes include realistic coordinates and directions, ensure TypeScript types match expected API contracts, verify localStorage persistence for stateful operations, test seamless switching between mock and real APIs, confirm other frontend components can successfully consume mock APIs
+
+# Subtasks:
+## 1. Install and configure MSW (Mock Service Worker) [pending]
+### Dependencies: None
+### Description: Set up MSW for intercepting API requests in development environment with proper TypeScript support
+### Details:
+Install msw package and set up service worker registration in public directory. Configure MSW handlers in src/mocks/handlers.ts with proper TypeScript types. Set up browser integration in src/mocks/browser.ts and server integration for SSR in src/mocks/server.ts. Add MSW initialization to app startup with conditional loading for development environment only. Configure request interception for all /api/v1/* routes
+
+## 2. Create Korean merchant data generators with Faker.js [pending]
+### Dependencies: 5.1
+### Description: Implement realistic Korean business data generation using Faker.js with proper category distribution
+### Details:
+Install @faker-js/faker and create custom Korean data generators in src/mocks/generators/. Implement Korean business name generator with realistic patterns (e.g., '김밥천국', 'GS25', '스타벅스'). Create address generator using real Korean address format with 시/구/동 structure. Generate Korean phone numbers in proper format (02-XXXX-XXXX, 010-XXXX-XXXX). Implement category-specific business name generation (편의점, 음식점, 카페, 서점 등). Create realistic business hours patterns for different categories
+
+## 3. Implement merchant-related mock API endpoints [pending]
+### Dependencies: 5.1, 5.2
+### Description: Create MSW handlers for all merchant API endpoints with realistic response data and filtering logic
+### Details:
+Create GET /api/v1/merchants handler with pagination (page, size params), filtering by cardTypes and categories, and sorting options. Implement GET /api/v1/merchants/{id} returning detailed merchant with reviews and ratings. Build GET /api/v1/merchants/nearby with haversine distance calculation for realistic proximity search. Develop GET /api/v1/merchants/search with Korean text search supporting initial consonant search (초성 검색). Add proper response headers and status codes for each endpoint
+
+## 4. Create route and card mock API endpoints [pending]
+### Dependencies: 5.1, 5.2
+### Description: Implement route calculation and optimization endpoints along with card information APIs
+### Details:
+Implement POST /api/v1/routes/calculate with mock polyline generation using actual Korean coordinates. Create GET /api/v1/routes/optimize that reorders waypoints for shortest path. Build GET /api/v1/cards endpoint returning all supported card types with metadata. Generate realistic turn-by-turn directions in Korean (e.g., '직진', '우회전', '좌회전'). Calculate realistic travel times based on Korean urban speeds (walking: 4km/h, transit: 25km/h average)
+
+## 5. Implement realistic network delays and error scenarios [pending]
+### Dependencies: 5.3, 5.4
+### Description: Add configurable response delays and error simulation for robust frontend error handling testing
+### Details:
+Create delay utility function with random variation (100-500ms base + 0-200ms jitter). Implement error scenario triggers based on special query parameters or headers. Add 5% random network error rate for GET requests in development. Create specific error scenarios: 404 for merchants with ID > 10000, 500 for specific search terms, 401 for auth endpoints. Implement request timeout simulation for routes taking > 5 seconds. Add network offline detection and appropriate error responses
+
+## 6. Create TypeScript types and API contracts [pending]
+### Dependencies: 5.3, 5.4
+### Description: Define comprehensive TypeScript interfaces matching backend API contracts for type-safe development
+### Details:
+Create src/types/api.d.ts with all API request/response interfaces. Define merchant types including MerchantListResponse, MerchantDetailResponse, NearbyMerchantsRequest/Response. Add route types for RouteCalculateRequest/Response, OptimizeRouteRequest/Response with proper GeoJSON types. Create card types with proper enum values for card codes. Add error response types matching backend error format. Export all types from central index for easy importing
+
+## 7. Implement localStorage persistence layer [pending]
+### Dependencies: 5.3, 5.4, 5.6
+### Description: Add stateful mock operations with localStorage for data persistence across page reloads
+### Details:
+Create MockDataStore class managing localStorage with proper serialization. Implement saved routes storage with unique IDs and timestamps. Add favorite merchants functionality with add/remove operations. Create search history storage with auto-cleanup after 30 days. Implement user preferences storage (selected cards, map settings). Add data migration logic for localStorage schema changes. Create data export/import functionality for testing different scenarios
+
+## 8. Create mock authentication and search suggestions [pending]
+### Dependencies: 5.6, 5.7
+### Description: Implement auth endpoints and intelligent search suggestions based on Korean place data
+### Details:
+Create POST /api/v1/auth/login with JWT token generation for test users. Implement token refresh and logout endpoints with proper token invalidation. Build search suggestions using common Korean place names and categories (강남역, 명동, 홍대 등). Add autocomplete logic supporting Korean consonant/vowel composition. Create user profile mock data with card ownership information. Implement role-based responses (admin sees additional merchant data). Add OAuth mock endpoints for Kakao/Naver login simulation
+

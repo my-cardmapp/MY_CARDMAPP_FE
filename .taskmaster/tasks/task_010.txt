@@ -1,0 +1,91 @@
+# Task ID: 10
+# Title: Build Frontend State Management Optimization
+# Status: pending
+# Dependencies: 4
+# Priority: high
+# Description: Redesign state management using Zustand to fix circular dependencies and improve performance
+# Details:
+1. Migrate from Context API to Zustand 4.x
+2. Create stores: useMapStore, useMerchantStore, useSearchStore
+3. Implement computed values with shallow equality checks
+4. Add Redux DevTools integration for debugging
+5. Persist user preferences in localStorage
+6. Implement optimistic updates for better UX
+7. Add state hydration for SSR compatibility
+
+# Test Strategy:
+No re-render loops in React DevTools, state updates complete in <16ms, localStorage persistence works across sessions, SSR hydration without mismatches
+
+# Subtasks:
+## 1. Analyze Current State Management and Plan Migration [pending]
+### Dependencies: None
+### Description: Audit existing Context API implementation, identify circular dependencies, and create a detailed migration plan to Zustand
+### Details:
+1. Map all existing Context providers and consumers in the codebase
+2. Document current state structure and data flow patterns
+3. Identify circular dependency chains causing re-render loops
+4. Create migration checklist with component priorities
+5. Design new Zustand store architecture avoiding previous issues
+6. Document breaking changes and required refactoring
+
+## 2. Implement Core Zustand Stores with TypeScript [pending]
+### Dependencies: 10.1
+### Description: Create the three main Zustand stores (useMapStore, useMerchantStore, useSearchStore) with proper TypeScript typing and state structure
+### Details:
+1. Install zustand@4.x and required dependencies
+2. Create useMapStore with map instance, viewport, markers, and controls state
+3. Create useMerchantStore with merchant data, filters, and selection state
+4. Create useSearchStore with search query, results, and filter state
+5. Implement proper TypeScript interfaces for all store states
+6. Add immer middleware for immutable updates
+7. Create store hooks with proper selector patterns
+
+## 3. Add Performance Optimizations and Computed Values [pending]
+### Dependencies: 10.2
+### Description: Implement shallow equality checks, memoized selectors, and computed values to prevent unnecessary re-renders
+### Details:
+1. Implement shallow equality checks using Zustand's shallow function
+2. Create memoized selectors for expensive computations
+3. Add computed values for filtered merchants and search results
+4. Implement subscription patterns for specific state slices
+5. Add performance monitoring hooks to track re-renders
+6. Optimize state update batching for multiple changes
+7. Create custom hooks with built-in optimization
+
+## 4. Integrate Redux DevTools and Debugging Features [pending]
+### Dependencies: 10.2
+### Description: Add Redux DevTools integration for state debugging and implement development-only debugging utilities
+### Details:
+1. Configure Redux DevTools middleware for all stores
+2. Add action names and payload tracking
+3. Implement time-travel debugging support
+4. Create development-only state logger
+5. Add state snapshot export/import functionality
+6. Configure DevTools to show state diffs
+7. Add performance timing to DevTools actions
+
+## 5. Implement State Persistence and Hydration [pending]
+### Dependencies: 10.2, 10.3
+### Description: Add localStorage persistence for user preferences and implement SSR-compatible state hydration
+### Details:
+1. Create persistence middleware for localStorage
+2. Implement selective state persistence (only user preferences)
+3. Add versioning for persisted state schema
+4. Implement state migration for schema changes
+5. Create SSR hydration logic preventing mismatches
+6. Add error handling for corrupted persisted state
+7. Implement state reset functionality
+
+## 6. Migrate Components and Add Optimistic Updates [pending]
+### Dependencies: 10.2, 10.3, 10.4, 10.5
+### Description: Replace Context API with Zustand in all components and implement optimistic updates for better UX
+### Details:
+1. Migrate MapContainer from Context to useMapStore
+2. Update MerchantList to use useMerchantStore
+3. Refactor SearchBar to use useSearchStore
+4. Implement optimistic updates for filter changes
+5. Add optimistic UI for merchant selection
+6. Create rollback mechanism for failed updates
+7. Remove all Context Provider wrappers
+8. Update component tests for new state management
+

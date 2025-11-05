@@ -1,0 +1,55 @@
+# Task ID: 7
+# Title: Build Search Interface and Filtering Components
+# Status: pending
+# Dependencies: 5
+# Priority: high
+# Description: Create search UI with autocomplete, filters for card types and categories, and real-time result updates using mock API service
+# Details:
+Implement frontend search components that consume the mock API service created in task 42. Create SearchBar component with debounced input consuming mock search endpoints. Implement autocomplete dropdown with keyboard navigation using mock API suggestions. Build FilterPanel with checkboxes for card types (CHILD_MEAL, CULTURE_NURI, etc.) and categories, utilizing mock API filter endpoints. Create SearchResults component with list/map view toggle displaying filtered results from mock API. Implement client-side state management for filters while relying on mock API for data. Add loading states that reflect mock API response times. Store filter state in URL params for shareability. Ensure all components are ready to seamlessly transition to real API endpoints.
+
+# Test Strategy:
+Test search input debouncing with mock API responses, verify autocomplete consumes mock API suggestions correctly, test filter combinations against mock API dataset, validate URL parameter sync, test loading states match mock API delays, verify error handling for mock API error scenarios, ensure components handle mock API data structure properly
+
+# Subtasks:
+## 1. Create SearchBar Component with Debounced Input [pending]
+### Dependencies: None
+### Description: Implement the main search input component with debouncing to prevent excessive API calls
+### Details:
+Create a SearchBar component in src/components/search/SearchBar.tsx that accepts user input and implements debouncing using a custom hook or library like use-debounce. The component should call the mock search API endpoint after a 300ms delay when the user stops typing. Include proper TypeScript interfaces for props and state. Style using Tailwind CSS with focus states and responsive design. Integrate with the search state management system.
+
+## 2. Build Autocomplete Dropdown with Keyboard Navigation [pending]
+### Dependencies: 7.1
+### Description: Create an accessible autocomplete dropdown that displays search suggestions from the mock API
+### Details:
+Implement AutocompleteDropdown component that renders below the SearchBar and displays suggestions from the mock API's autocomplete endpoint. Add keyboard navigation support (arrow keys to navigate, Enter to select, Escape to close). Implement proper ARIA attributes for accessibility. Handle mouse interactions alongside keyboard navigation. Position the dropdown correctly using floating-ui or similar. Highlight matching text portions in suggestions. Handle edge cases like no results or API errors.
+
+## 3. Implement FilterPanel with Card Type and Category Filters [pending]
+### Dependencies: None
+### Description: Create a comprehensive filter panel for card types and merchant categories
+### Details:
+Build FilterPanel component with two main sections: card type filters (CHILD_MEAL, CULTURE_NURI, etc.) and category filters (restaurants, convenience stores, cafes, etc.). Use checkbox groups with 'select all' functionality. Implement proper state management for active filters. Create reusable Checkbox and CheckboxGroup components. Add filter count badges. Include collapse/expand functionality for mobile. Style with consistent design system. Ensure filters trigger API calls to update results.
+
+## 4. Create SearchResults Component with List/Map View Toggle [pending]
+### Dependencies: 7.1, 7.3
+### Description: Build the main results display component with switchable views
+### Details:
+Implement SearchResults component that displays filtered merchant data from the mock API. Create two view modes: list view (cards with merchant info) and map view (integrated with existing map components). Add view toggle button with smooth transitions. Implement pagination or infinite scroll for list view. Show result count and active filters summary. Handle empty states and loading states. Ensure each merchant card shows relevant information (name, address, accepted cards, distance if available).
+
+## 5. Implement Client-side Filter State Management [pending]
+### Dependencies: 7.3
+### Description: Set up state management for search and filter states using Zustand or Context API
+### Details:
+Create a centralized state management solution for search and filter states. Define interfaces for SearchState including query, active filters (card types, categories), view mode, and results. Implement actions for updating search query, toggling filters, clearing filters, and updating results. Add middleware for URL parameter synchronization. Include computed values like active filter count and formatted filter strings. Ensure state updates trigger appropriate API calls.
+
+## 6. Add URL Parameter Synchronization for Shareability [pending]
+### Dependencies: 7.5
+### Description: Implement bidirectional sync between filter state and URL parameters
+### Details:
+Create a URL synchronization system that updates URL parameters when filters change and restores filter state from URL on page load. Use Next.js router for URL updates without page refresh. Implement parameter encoding/decoding for complex filter states. Handle arrays (multiple card types) and nested objects. Add debouncing for URL updates to prevent history spam. Create shareable URL generation function. Ensure back/forward navigation works correctly with filter states.
+
+## 7. Implement Loading States and Error Handling [pending]
+### Dependencies: 7.1, 7.2, 7.4
+### Description: Add comprehensive loading indicators and error states for all search operations
+### Details:
+Create reusable loading components (skeleton screens, spinners) that match the design system. Implement loading states for initial search, filter changes, and pagination. Add error boundaries for component-level error handling. Create error state components with retry functionality. Implement optimistic updates for filter changes. Add timeout handling for slow API responses. Include proper error messages for different failure scenarios (network error, server error, no results).
+

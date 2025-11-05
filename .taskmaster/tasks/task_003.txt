@@ -1,0 +1,60 @@
+# Task ID: 3
+# Title: Integrate Naver Map SDK and Create Map Component
+# Status: done
+# Dependencies: 2
+# Priority: high
+# Description: Implement Naver Map integration with custom markers, clustering, and interactive features for merchant display
+# Details:
+Install Naver Map SDK via script tag with proper typing. Create MapContainer component with lazy loading. Implement custom markers for different card types with distinct colors/icons. Add marker clustering using Naver Map clustering library. Create info windows for merchant details. Implement map controls: zoom, location, fullscreen. Add viewport change listeners for dynamic data loading. Handle map events: click, drag, zoom.
+
+# Test Strategy:
+Test map initialization and rendering, verify marker display and clustering, test info window interactions, validate performance with 1000+ markers, test responsive behavior on mobile
+
+# Subtasks:
+## 1. Set up Naver Map SDK and TypeScript Type Definitions [done]
+### Dependencies: None
+### Description: Install and configure Naver Map SDK with proper TypeScript support and create necessary type definitions
+### Details:
+Add Naver Map SDK script tag to _document.tsx with client ID from environment variables. Create types/naver-map.d.ts file to declare naver namespace and map types. Set up environment variables for NEXT_PUBLIC_NAVER_MAP_CLIENT_ID. Create a useNaverMapScript custom hook to handle script loading state and ensure map is available before component initialization. Configure Next.js to handle external scripts properly.
+<info added on 2025-07-25T04:52:03.982Z>
+네이버 맵 SDK 통합 완료. useNaverMapScript 훅이 정상적으로 맵 스크립트를 로드하고 로딩 상태를 관리하도록 구현함. TypeScript 타입 정의를 통해 네이버 맵 API의 타입 안전성 확보. 테스트 코드로 스크립트 로딩 시나리오와 에러 핸들링 검증 완료. 샘플 페이지에서 맵이 정상적으로 렌더링되고 상호작용 가능함을 확인. 다음 단계로 MapContainer 컴포넌트 구현 진행 가능.
+</info added on 2025-07-25T04:52:03.982Z>
+
+## 2. Create Base MapContainer Component with Lazy Loading [done]
+### Dependencies: 3.1
+### Description: Build the main map container component with lazy loading support and proper initialization
+### Details:
+Create components/map/MapContainer.tsx using dynamic import with ssr: false. Implement map initialization with default center (Seoul) and zoom level. Add loading skeleton component while map loads. Handle map instance lifecycle with useEffect cleanup. Create MapContext to share map instance with child components. Implement responsive container sizing. Add error boundary for map loading failures.
+<info added on 2025-07-25T05:30:37.624Z>
+Completed: MapContext implementation for sharing map instance across components, Dynamic import with SSR disabled to prevent server-side rendering issues, MapSkeleton component displays loading state while map initializes, Map initialization and lifecycle management with proper cleanup in useEffect, Error handling and responsive design applied to container, All unit tests passing successfully
+</info added on 2025-07-25T05:30:37.624Z>
+
+## 3. Implement Custom Markers and Clustering [done]
+### Dependencies: 3.2
+### Description: Create custom marker system for different card types and implement marker clustering for performance
+### Details:
+Create MarkerManager class to handle marker lifecycle. Design custom marker icons for each card type (child meal, culture, local currency) using distinct colors from card configuration. Implement marker clustering using naver.maps.MarkerClustering with custom cluster styles. Create marker factory function that generates markers from merchant data. Add marker pooling for performance with large datasets. Implement different marker sizes based on zoom level.
+<info added on 2025-07-25T07:27:29.613Z>
+Custom marker system successfully implemented:
+
+1. MarkerManager class created - manages marker lifecycle, clustering, and filtering functionality
+2. Card-specific marker styles defined in cardStyles.ts (colors and icons)
+3. useMarkers hook implemented - provides React interface for MarkerManager
+4. Marker functionality integrated into MapContainer component
+5. Sample merchant data (sampleMerchants) generated for testing
+6. Map page updated with card type filter UI and merchant information display
+7. All tests passing successfully
+</info added on 2025-07-25T07:27:29.613Z>
+
+## 4. Create Info Windows and Map Controls [done]
+### Dependencies: 3.3
+### Description: Implement interactive info windows for merchants and add essential map control components
+### Details:
+Create MerchantInfoWindow component with merchant details (name, address, cards accepted, hours). Implement singleton pattern for info window to show only one at a time. Add map controls: ZoomControl, LocationControl (using Geolocation API), FullscreenControl. Create custom control styles matching app design. Implement info window positioning to stay within viewport. Add click-outside handler to close info windows. Style info windows with card type indicators.
+
+## 5. Implement Map Event Handlers and Viewport Updates [done]
+### Dependencies: 3.4
+### Description: Add event listeners for map interactions and implement dynamic data loading based on viewport
+### Details:
+Add viewport change listener (bounds_changed) with debouncing (500ms) to prevent excessive API calls. Implement getVisibleBounds method to calculate current map bounds. Create useMapBounds hook to trigger merchant data fetching when bounds change. Add map interaction events: click (close info windows), drag_start/end, zoom_changed. Implement performance optimization by only rendering markers within extended viewport bounds. Add loading indicator during data fetch. Store last viewport in sessionStorage for restoration.
+

@@ -1,0 +1,108 @@
+# Task ID: 12
+# Title: Implement Progressive Web App Features
+# Status: pending
+# Dependencies: 10
+# Priority: low
+# Description: Convert the application to a PWA with offline support, push notifications, and app-like experience
+# Details:
+1. Create service worker with Workbox 7.x
+2. Implement offline-first caching strategy
+3. Cache map tiles for offline viewing
+4. Add web app manifest with icons
+5. Implement push notifications for favorites
+6. Add install prompt for A2HS (Add to Home Screen)
+7. Optimize for Lighthouse PWA audit score > 95
+
+# Test Strategy:
+Test offline functionality, verify push notifications delivery, validate manifest configuration, achieve Lighthouse PWA score > 95
+
+# Subtasks:
+## 1. Set up service worker with Workbox [pending]
+### Dependencies: None
+### Description: Create and configure a service worker using Workbox 7.x for managing caching strategies and offline functionality
+### Details:
+1. Install Workbox dependencies: workbox-webpack-plugin, workbox-window, workbox-precaching, workbox-routing, workbox-strategies
+2. Create service-worker.ts in public directory with Workbox configuration
+3. Configure Next.js to handle service worker registration in _app.tsx
+4. Set up workbox-webpack-plugin in next.config.js for automatic SW generation
+5. Implement service worker registration logic with update prompts
+6. Configure precaching for static assets (JS, CSS, fonts)
+7. Add skip waiting and clients claim for immediate activation
+
+## 2. Implement offline-first caching strategies [pending]
+### Dependencies: 12.1
+### Description: Configure intelligent caching strategies for different types of content including API responses, images, and static assets
+### Details:
+1. Implement StaleWhileRevalidate strategy for API endpoints (/api/merchants, /api/cards)
+2. Use CacheFirst strategy for static images and fonts with 30-day expiration
+3. Configure NetworkFirst strategy for search results with 5-minute cache
+4. Implement custom handler for merchant data with background sync
+5. Set up IndexedDB for storing merchant favorites and recent searches
+6. Create cache versioning system for controlled updates
+7. Implement cache size limits (50MB for images, 10MB for API responses)
+
+## 3. Cache map tiles for offline viewing [pending]
+### Dependencies: 12.2
+### Description: Implement a system to cache Naver Map tiles for offline map functionality within defined geographic boundaries
+### Details:
+1. Create map tile caching strategy with Workbox runtime caching
+2. Implement geographic boundary detection for selective tile caching
+3. Configure tile URL pattern matching for Naver Maps API
+4. Set up background prefetching for frequently viewed areas
+5. Implement cache size management (limit to 100MB for map tiles)
+6. Create UI indicator for cached map areas
+7. Handle tile expiration and refresh strategy
+8. Implement fallback to lower zoom levels when tiles unavailable
+
+## 4. Create web app manifest and icons [pending]
+### Dependencies: None
+### Description: Design and implement a comprehensive web app manifest with all required icons and metadata for PWA installation
+### Details:
+1. Create manifest.json with app metadata (name, short_name, description in Korean)
+2. Design and generate icon set: 192x192, 512x512, maskable icons, apple-touch-icons
+3. Configure theme colors matching brand (#10B981 primary)
+4. Set display mode to 'standalone' with proper orientation
+5. Define start_url with UTM parameters for analytics
+6. Add shortcuts for quick actions (nearby search, favorites)
+7. Configure related_applications if native apps exist
+8. Implement dynamic manifest generation for personalization
+
+## 5. Implement push notification system [pending]
+### Dependencies: 12.1, 12.2
+### Description: Build a complete push notification system for favorite merchant updates, nearby deals, and card-specific announcements
+### Details:
+1. Implement Push API subscription flow with user permission handling
+2. Create notification service worker handlers for different notification types
+3. Set up backend integration for push subscription management
+4. Design notification templates for: merchant updates, new nearby merchants, card announcements
+5. Implement notification click handlers with deep linking
+6. Create notification preferences UI with granular controls
+7. Add notification badge and icon management
+8. Implement quiet hours and notification grouping
+
+## 6. Add install prompt and A2HS experience [pending]
+### Dependencies: 12.4
+### Description: Create a polished Add to Home Screen experience with custom install prompts and post-install onboarding
+### Details:
+1. Implement beforeinstallprompt event handler with deferral logic
+2. Create custom install UI component with Korean localization
+3. Design contextual install prompts (after 3 searches, on favorites page)
+4. Implement install success tracking and analytics
+5. Create post-install welcome screen with PWA features tour
+6. Add iOS-specific install instructions with visual guide
+7. Implement install state persistence in localStorage
+8. Create A/B testing framework for install prompt timing
+
+## 7. Optimize for Lighthouse PWA audit [pending]
+### Dependencies: 12.1, 12.2, 12.3, 12.4, 12.5, 12.6
+### Description: Fine-tune all PWA features to achieve a Lighthouse PWA score above 95 with focus on performance and best practices
+### Details:
+1. Run initial Lighthouse audit to establish baseline
+2. Optimize service worker for fast startup and installation
+3. Ensure all PWA criteria are met (HTTPS, manifest, icons, offline page)
+4. Implement proper meta tags for viewport and theme-color
+5. Optimize Time to Interactive (TTI) and First Contentful Paint (FCP)
+6. Add offline fallback page with helpful content
+7. Ensure all resources use HTTPS and CSP headers
+8. Create automated Lighthouse CI pipeline for continuous monitoring
+

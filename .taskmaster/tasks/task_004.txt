@@ -1,0 +1,105 @@
+# Task ID: 4
+# Title: Optimize Frontend Map Rendering Performance
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Fix infinite render loop issue and implement viewport-based marker rendering with clustering for handling 10,000+ markers
+# Details:
+1. Refactor MapContext to prevent circular dependencies using useRef for map instance
+2. Implement marker clustering with @googlemaps/markerclusterer adapted for Naver Maps
+3. Add viewport change debouncing (300ms) to reduce API calls
+4. Use React.memo and useMemo for expensive computations
+5. Implement virtual scrolling for marker list view
+6. Add intersection observer for lazy loading off-screen markers
+7. Optimize marker icons with sprite sheets
+
+# Test Strategy:
+Performance testing with React DevTools Profiler, verify no infinite loops, test with 10k markers maintaining 60fps, measure initial load time < 2s
+
+# Subtasks:
+## 1. Analyze and fix infinite render loop in MapContext [pending]
+### Dependencies: None
+### Description: Identify the root cause of circular dependencies in MapContext and refactor using useRef pattern to prevent unnecessary re-renders
+### Details:
+1. Profile current MapContext implementation with React DevTools to identify render triggers
+2. Analyze dependency chains causing circular updates
+3. Refactor map instance management using useRef instead of state
+4. Implement proper cleanup in useEffect hooks
+5. Ensure map event listeners don't trigger state updates that cause re-renders
+
+## 2. Implement viewport-based marker rendering system [pending]
+### Dependencies: 4.1
+### Description: Create a system that only renders markers visible within the current map viewport, with efficient boundary detection
+### Details:
+1. Implement viewport boundary detection using Naver Maps getBounds() API
+2. Create spatial indexing for markers using quadtree or R-tree structure
+3. Filter markers based on viewport coordinates with buffer zone
+4. Implement marker recycling pool to reuse DOM elements
+5. Add viewport change listener with proper cleanup
+
+## 3. Integrate marker clustering with Naver Maps [pending]
+### Dependencies: 4.2
+### Description: Adapt @googlemaps/markerclusterer or implement custom clustering solution compatible with Naver Maps API
+### Details:
+1. Research Naver Maps clustering capabilities and limitations
+2. Evaluate supercluster library for custom implementation
+3. Implement clustering algorithm with configurable grid size and zoom levels
+4. Create custom cluster markers with count indicators
+5. Handle cluster click events to zoom and expand
+6. Optimize cluster calculations using Web Workers if needed
+
+## 4. Add debouncing and throttling for map interactions [pending]
+### Dependencies: 4.1, 4.2
+### Description: Implement debouncing for viewport changes and throttling for other map events to reduce API calls and re-renders
+### Details:
+1. Create custom useDebounce hook with 300ms delay for viewport changes
+2. Implement throttling for zoom events using requestAnimationFrame
+3. Batch marker updates using setTimeout with 16ms delay
+4. Add abort controllers for cancelled API requests
+5. Implement request deduplication for concurrent identical requests
+
+## 5. Optimize React components with memoization [pending]
+### Dependencies: 4.1
+### Description: Apply React.memo, useMemo, and useCallback strategically to prevent unnecessary re-renders of map components
+### Details:
+1. Wrap MapContainer and child components with React.memo
+2. Memoize expensive marker data transformations with useMemo
+3. Use useCallback for event handlers passed to markers
+4. Implement custom comparison functions for complex props
+5. Create separate components for static and dynamic map elements
+6. Use React.lazy for code splitting of heavy components
+
+## 6. Implement virtual scrolling for marker list view [pending]
+### Dependencies: 4.5
+### Description: Create a performant list view for markers using virtual scrolling techniques to handle large datasets
+### Details:
+1. Integrate react-window or tanstack-virtual for virtual scrolling
+2. Calculate optimal item height and overscan settings
+3. Implement dynamic height support for variable content
+4. Add scroll position persistence and restoration
+5. Optimize list item components with memo and keys
+6. Implement smooth scrolling with momentum
+
+## 7. Add intersection observer for lazy loading [pending]
+### Dependencies: 4.2, 4.6
+### Description: Implement lazy loading for off-screen markers and images using Intersection Observer API
+### Details:
+1. Create custom useIntersectionObserver hook
+2. Implement progressive marker loading based on visibility
+3. Add placeholder elements for unloaded markers
+4. Configure root margins for preloading nearby markers
+5. Implement image lazy loading for marker icons
+6. Add loading states and skeleton screens
+
+## 8. Optimize marker icons with sprite sheets [pending]
+### Dependencies: 4.7
+### Description: Convert individual marker icons to sprite sheets for reduced HTTP requests and improved rendering performance
+### Details:
+1. Audit all marker icon variations and sizes
+2. Generate sprite sheets using build-time tooling
+3. Implement CSS-based sprite positioning system
+4. Create icon caching strategy with service worker
+5. Add WebP format support with PNG fallback
+6. Implement icon preloading for common marker types
+7. Optimize sprite sheet size with compression
+

@@ -1,0 +1,49 @@
+# Task ID: 8
+# Title: Create Route Planning UI Components
+# Status: pending
+# Dependencies: 7, 5
+# Priority: medium
+# Description: Build frontend components for route planning including waypoint management, route visualization, and turn-by-turn directions using mock API service
+# Details:
+Create RoutePlanner component with origin/destination inputs using mock API route endpoints. Implement WaypointList with drag-and-drop reordering using @dnd-kit/sortable. Add route visualization on map with polyline using route data from mock API service. Create DirectionsList component showing turn-by-turn instructions from mock API responses. Implement route sharing via URL parameters. Add save route functionality to localStorage. Display total time/distance prominently. Integrate with Task 42's mock API service route endpoints for all route-related data fetching during development.
+
+# Test Strategy:
+Test waypoint addition/removal with mock API responses, verify drag-and-drop functionality, test route polyline rendering with mock API coordinates, validate direction display using mock API instructions, test route sharing URLs, verify localStorage persistence, ensure proper integration with mock API service endpoints, test error handling for failed route requests
+
+# Subtasks:
+## 1. Integrate with mock API route endpoints [pending]
+### Dependencies: None
+### Description: Connect to Task 42's mock API service and verify route endpoint functionality
+### Details:
+
+
+## 2. Implement RoutePlanner component with mock API [pending]
+### Dependencies: None
+### Description: Build main route planning component using mock API route endpoints for origin/destination inputs
+### Details:
+
+
+## 3. Create WaypointList with drag-and-drop [pending]
+### Dependencies: None
+### Description: Implement waypoint management with @dnd-kit/sortable library
+### Details:
+
+
+## 4. Add route visualization on map [pending]
+### Dependencies: None
+### Description: Display route polyline on map using coordinate data from mock API responses
+### Details:
+
+
+## 5. Build DirectionsList component [pending]
+### Dependencies: None
+### Description: Create turn-by-turn directions display using instruction data from mock API
+### Details:
+
+
+## 6. Implement route sharing and persistence [pending]
+### Dependencies: None
+### Description: Add URL-based sharing and localStorage save functionality
+### Details:
+
+

@@ -1,0 +1,84 @@
+# Task ID: 6
+# Title: Create Frontend Testing Infrastructure
+# Status: pending
+# Dependencies: 2, 5
+# Priority: high
+# Description: Set up comprehensive testing framework including unit tests with Vitest, component tests with React Testing Library, and E2E tests with Playwright for reliable frontend development
+# Details:
+1. Install and configure Vitest as the test runner:
+   - Install vitest, @vitest/ui, @testing-library/react, @testing-library/jest-dom
+   - Create vitest.config.ts with proper paths, coverage settings, and test environment
+   - Configure jsdom environment for component testing
+   - Set up coverage reporting with c8 (target 80% coverage)
+
+2. Set up React Testing Library:
+   - Create test/setup.ts with global test utilities and custom render function
+   - Configure testing-library matchers and jest-dom extensions
+   - Create test utilities for mocking Next.js router, Naver Maps API
+   - Set up MSW for API mocking in tests (building on task 42's mock service)
+
+3. Configure Playwright for E2E testing:
+   - Install @playwright/test and create playwright.config.ts
+   - Set up multiple browser configurations (Chrome, Firefox, Safari)
+   - Configure viewport sizes for desktop and mobile testing
+   - Create page object models for main application flows
+   - Set up visual regression testing with screenshots
+
+4. Create test file structure:
+   - __tests__/unit/ for utility functions and hooks
+   - __tests__/components/ for React component tests
+   - e2e/ for Playwright E2E tests
+   - __mocks__/ for shared mocks and fixtures
+
+5. Write example tests for critical components:
+   - MapContainer: Test marker rendering, clustering, interactions
+   - SearchBar: Test debouncing, autocomplete, mock API integration
+   - FilterPanel: Test filter state management, URL sync
+   - MerchantCard: Test rendering with different card types
+
+6. Set up CI/CD test pipeline:
+   - Add test scripts to package.json (test, test:ui, test:e2e)
+   - Configure GitHub Actions workflow for automated testing
+   - Set up test result reporting and coverage badges
+   - Add pre-commit hooks with husky for test execution
+
+# Test Strategy:
+Verify Vitest runs successfully with 'npm test' command, ensure all example component tests pass with proper mocking, validate E2E tests complete without errors on multiple browsers, check coverage report shows >80% for tested components, confirm CI pipeline executes all test suites on PR creation, test that mock API from task 42 properly integrates with component tests, verify visual regression tests capture baseline screenshots correctly
+
+# Subtasks:
+## 1. Install and Configure Vitest Test Runner [pending]
+### Dependencies: None
+### Description: Set up Vitest as the primary test runner with proper TypeScript support, coverage reporting, and jsdom environment for React component testing
+### Details:
+Install vitest@latest, @vitest/ui, @vitest/coverage-v8, and jsdom as dev dependencies. Create vitest.config.ts in the project root with path aliases matching tsconfig.json, configure test globals, set up jsdom as the test environment, and configure coverage reporting with v8 provider targeting 80% coverage threshold. Include proper exclude patterns for node_modules, .next, and other build directories. Set up test reporters for both terminal and JSON output for CI integration.
+
+## 2. Configure React Testing Library with Custom Utilities [pending]
+### Dependencies: 6.1
+### Description: Set up React Testing Library with Next.js specific utilities, custom render functions, and global test setup including jest-dom matchers
+### Details:
+Install @testing-library/react, @testing-library/jest-dom, @testing-library/user-event, and @testing-library/react-hooks. Create test/setup.ts that extends default render with providers (NextRouter, Zustand stores), configure jest-dom matchers globally, and set up afterEach cleanup. Create test/utils/index.tsx with custom render function wrapping components with necessary providers. Create specific mock utilities for Next.js router (useRouter, usePathname, useSearchParams) and Naver Maps API (Map, Marker, InfoWindow constructors). Set up test-utils for common testing patterns like waitForLoadingToFinish.
+
+## 3. Set Up MSW for API Mocking in Tests [pending]
+### Dependencies: 6.2
+### Description: Integrate Mock Service Worker with the testing environment to reuse the mock API handlers from task 5 for consistent test data
+### Details:
+Create test/mocks/server.ts that imports handlers from the existing MSW setup (task 5), configure setupServer for Node.js test environment. Add beforeAll, afterEach, and afterAll hooks in test/setup.ts to start server, reset handlers, and close server. Create test/mocks/test-data.ts with specific test fixtures for merchants, cards, and routes that can override default mock responses. Implement utility functions for customizing mock responses per test (e.g., mockSearchResponse, mockMerchantDetails). Ensure mock service worker intercepts all API calls during tests without requiring changes to application code.
+
+## 4. Install and Configure Playwright for E2E Testing [pending]
+### Dependencies: None
+### Description: Set up Playwright with multi-browser support, mobile viewports, and visual regression testing capabilities for comprehensive E2E testing
+### Details:
+Install @playwright/test as dev dependency and run 'npx playwright install' to download browser binaries. Create playwright.config.ts with projects for Chrome, Firefox, and Safari (both desktop and mobile viewports). Configure baseURL to use localhost:3000, set up test timeout of 30 seconds, configure screenshot on failure, and enable video recording for debugging. Set up visual regression testing with toHaveScreenshot assertions and threshold configurations. Create playwright/.gitignore to exclude test results and screenshots from version control. Configure parallel test execution with appropriate worker count based on CI environment.
+
+## 5. Create Test File Structure and Write Component Tests [pending]
+### Dependencies: 6.2, 6.3
+### Description: Establish organized test directory structure and write comprehensive tests for critical UI components including MapContainer, SearchBar, FilterPanel, and MerchantCard
+### Details:
+Create directory structure: __tests__/unit/ for utilities and hooks, __tests__/components/ for React components, e2e/ for Playwright tests, __mocks__/ for shared mocks. Write comprehensive tests for MapContainer covering marker rendering with different zoom levels, marker clustering behavior, and info window interactions. Test SearchBar with debouncing logic, autocomplete dropdown, loading states, and error handling. Create FilterPanel tests validating filter state management, URL synchronization, and filter persistence. Write MerchantCard tests checking rendering with different card types (CHILD_MEAL, CULTURE_NURI), proper styling application, and click interactions. Each test file should achieve >80% coverage for its component.
+
+## 6. Set Up CI/CD Pipeline and Development Tools [pending]
+### Dependencies: 6.1, 6.4, 6.5
+### Description: Configure automated testing in CI/CD pipeline with GitHub Actions, add pre-commit hooks, and create npm scripts for different testing scenarios
+### Details:
+Add npm scripts to package.json: 'test' for Vitest, 'test:ui' for Vitest UI mode, 'test:coverage' for coverage report, 'test:e2e' for Playwright, 'test:e2e:ui' for Playwright UI mode. Create .github/workflows/test.yml that runs on PR and push to main, with jobs for unit tests (with coverage upload to Codecov), E2E tests (with artifact upload for failure screenshots/videos), and build verification. Install husky and lint-staged, configure pre-commit hook to run affected tests and linting. Add coverage badges to README using Codecov or similar service. Configure test result reporting in PR comments using GitHub Actions bot. Set up branch protection rules requiring tests to pass before merge.
+
