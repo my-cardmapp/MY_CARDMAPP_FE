@@ -158,18 +158,23 @@ export default function MapPage() {
   return (
     <MapProvider>
       <div className="h-screen flex flex-col">
-        <header className="bg-white shadow-sm z-10 relative">
-          <div className="px-4 py-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Card-Map</h1>
-                  <p className="text-sm text-gray-600">복지카드 가맹점 지도</p>
+        <header className="bg-white border-b border-gray-200 z-10 relative">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between gap-4">
+              {/* 로고 및 사이드바 토글 */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
                 </div>
-                {/* 사이드바 토글 버튼 */}
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">Card-Map</h1>
+                </div>
                 <button
                   onClick={toggleSidebar}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                   aria-label={sidebarOpen ? '사이드바 닫기' : '사이드바 열기'}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -181,102 +186,92 @@ export default function MapPage() {
                   </svg>
                 </button>
               </div>
-              
-              {/* 카드 타입 필터 및 경로 계획 버튼 */}
-              <div className="flex gap-2 items-center">
+
+              {/* 액션 버튼 */}
+              <div className="flex items-center gap-2">
                 {/* 경로 계획 버튼 */}
                 <button
                   onClick={() => setShowRoutePlanner(!showRoutePlanner)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-                    showRoutePlanner 
-                      ? 'bg-blue-500 text-white' 
-                      : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all shadow-sm ${
+                    showRoutePlanner
+                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
                   }`}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                   </svg>
-                  경로 계획
+                  <span className="hidden md:inline">경로 계획</span>
                 </button>
-                
-                {/* 활성 필터 수 뱃지 */}
-                <div className="flex items-center gap-1 mr-2 pr-2 border-r border-gray-300">
-                  <span 
-                    className="bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-medium"
-                    data-testid="active-filter-count"
-                  >
-                    {activeCardTypes.length}
-                  </span>
-                  {activeCardTypes.length > 0 && (
-                    <span 
-                      className="text-sm text-gray-600"
-                      data-testid="filter-summary"
+
+                {/* 필터 버튼 */}
+                <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                    <span className="text-sm font-semibold text-gray-700">필터</span>
+                    {activeCardTypes.length > 0 && (
+                      <span className="px-2 py-0.5 bg-blue-600 text-white text-xs font-semibold rounded-full">
+                        {activeCardTypes.length}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-gray-300">
+                    <button
+                      onClick={handleSelectAll}
+                      className="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                      title="모두 선택"
                     >
-                      {activeCardTypes.map(type => {
-                        switch (type) {
-                          case 'CHILD_MEAL': return '아동급식카드'
-                          case 'CULTURE_NURI': return '문화누리카드'
-                          case 'LOCAL_CURRENCY': return '지역사랑상품권'
-                          default: return type
-                        }
-                      }).join(', ')} 적용됨
-                    </span>
-                  )}
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={handleDeselectAll}
+                      className="p-1.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                      title="모두 해제"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-gray-300">
+                    <button
+                      onClick={() => handleCardTypeFilter('CHILD_MEAL')}
+                      className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                        activeCardTypes.includes('CHILD_MEAL')
+                          ? 'bg-red-600 text-white shadow-sm'
+                          : 'bg-white text-gray-600 border border-gray-200 hover:border-red-300'
+                      }`}
+                    >
+                      급식
+                    </button>
+                    <button
+                      onClick={() => handleCardTypeFilter('CULTURE_NURI')}
+                      className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                        activeCardTypes.includes('CULTURE_NURI')
+                          ? 'bg-purple-600 text-white shadow-sm'
+                          : 'bg-white text-gray-600 border border-gray-200 hover:border-purple-300'
+                      }`}
+                    >
+                      문화
+                    </button>
+                    <button
+                      onClick={() => handleCardTypeFilter('LOCAL_CURRENCY')}
+                      className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                        activeCardTypes.includes('LOCAL_CURRENCY')
+                          ? 'bg-green-600 text-white shadow-sm'
+                          : 'bg-white text-gray-600 border border-gray-200 hover:border-green-300'
+                      }`}
+                    >
+                      상품권
+                    </button>
+                  </div>
                 </div>
-                
-                {/* 전체 선택/해제 버튼 */}
-                <div className="flex gap-1 mr-2 pr-2 border-r border-gray-300">
-                  <button
-                    onClick={handleSelectAll}
-                    className="px-2 py-1 rounded text-sm bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-                    title="모두 선택"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={handleDeselectAll}
-                    className="px-2 py-1 rounded text-sm bg-gray-500 text-white hover:bg-gray-600 transition-colors"
-                    title="모두 해제"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </button>
-                </div>
-                
-                {/* 개별 카드 필터 버튼 */}
-                <button
-                  onClick={() => handleCardTypeFilter('CHILD_MEAL')}
-                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                    activeCardTypes.includes('CHILD_MEAL')
-                      ? 'bg-red-500 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  아동급식카드
-                </button>
-                <button
-                  onClick={() => handleCardTypeFilter('CULTURE_NURI')}
-                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                    activeCardTypes.includes('CULTURE_NURI')
-                      ? 'bg-teal-500 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  문화누리카드
-                </button>
-                <button
-                  onClick={() => handleCardTypeFilter('LOCAL_CURRENCY')}
-                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                    activeCardTypes.includes('LOCAL_CURRENCY')
-                      ? 'bg-yellow-500 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  지역사랑상품권
-                </button>
               </div>
             </div>
           </div>
@@ -284,7 +279,7 @@ export default function MapPage() {
         
         <main className="flex-1 flex relative overflow-hidden">
           {/* 사이드바 - 가맹점 목록 또는 경로 계획 */}
-          <div className={`transition-all duration-300 ${sidebarOpen ? 'w-96' : 'w-0'} overflow-hidden border-r border-gray-200 bg-white`}>
+          <div className={`transition-all duration-300 ${sidebarOpen ? 'w-80' : 'w-0'} overflow-hidden border-r border-gray-200 bg-white`}>
             {sidebarOpen && (
               <div className="h-full flex flex-col">
                 {showRoutePlanner ? (
@@ -369,17 +364,6 @@ export default function MapPage() {
               merchant={selectedMerchant}
               onClose={() => setSelectedMerchant(null)}
             />
-
-            {/* Bounds info (debug) */}
-            {currentBounds && (
-              <div className="absolute bottom-4 left-4 z-10 bg-white p-2 rounded shadow text-xs max-w-xs">
-                <div className="font-semibold mb-1">Viewport Bounds</div>
-                <div>North: {currentBounds.north.toFixed(6)}</div>
-                <div>South: {currentBounds.south.toFixed(6)}</div>
-                <div>East: {currentBounds.east.toFixed(6)}</div>
-                <div>West: {currentBounds.west.toFixed(6)}</div>
-              </div>
-            )}
           </div>
         </main>
       </div>

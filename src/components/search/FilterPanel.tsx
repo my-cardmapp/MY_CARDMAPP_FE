@@ -245,7 +245,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
 
   const panelClasses = [
     'filter-panel',
-    'bg-white rounded-lg shadow-sm',
+    'bg-white rounded-lg shadow-sm border border-gray-200',
     isMobile ? 'fixed bottom-0 left-0 right-0 z-40' : '',
     className,
   ].filter(Boolean).join(' ');
@@ -264,35 +264,40 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
         aria-label="필터 패널"
       >
       {/* Header */}
-      <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+      <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
         <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center">
+            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+          </div>
           <h2 className="text-lg font-semibold text-gray-900">필터</h2>
           {hasActiveFilters && !isExpanded && isMobile && (
             <span
               data-testid="total-filter-badge"
-              className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded-full"
+              className="px-2.5 py-0.5 text-xs font-semibold bg-blue-100 text-blue-700 rounded-full"
             >
               {totalActiveFilters}
             </span>
           )}
         </div>
-        
+
         <div className="flex items-center gap-2">
           {hasActiveFilters && (
             <button
               data-testid="clear-all-filters"
               onClick={handleClearAll}
-              className="text-sm text-gray-600 hover:text-gray-900"
+              className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
             >
               전체 해제
             </button>
           )}
-          
+
           {isMobile && (
             <button
               data-testid="filter-collapse-button"
               onClick={toggleExpanded}
-              className="p-1 text-gray-600 hover:text-gray-900"
+              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
             >
               <svg
                 className={`w-5 h-5 transition-transform duration-200 ${
@@ -321,7 +326,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
           isExpanded ? 'expanded' : 'collapsed'
         } ${
           isMobile && !isExpanded ? 'hidden' : ''
-        } p-4 space-y-4 max-h-96 overflow-y-auto`}
+        } p-5 space-y-6 max-h-96 overflow-y-auto`}
       >
         {/* Card Types */}
         <div role="group" aria-label="카드 종류 필터">
@@ -336,9 +341,9 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
           {filters.cardTypes.length > 0 && (
             <span
               data-testid="card-filter-badge"
-              className="inline-block mt-2 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded-full"
+              className="inline-block mt-2 px-2.5 py-1 text-xs font-semibold bg-blue-50 text-blue-600 rounded-full border border-blue-200"
             >
-              {filters.cardTypes.length}
+              {filters.cardTypes.length}개 선택됨
             </span>
           )}
           {cardOptions.length > 0 && filters.cardTypes.length === cardOptions.length && (
@@ -374,9 +379,9 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
           {filters.categories.length > 0 && (
             <span
               data-testid="category-filter-badge"
-              className="inline-block mt-2 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded-full"
+              className="inline-block mt-2 px-2.5 py-1 text-xs font-semibold bg-blue-50 text-blue-600 rounded-full border border-blue-200"
             >
-              {filters.categories.length}
+              {filters.categories.length}개 선택됨
             </span>
           )}
           {categoryOptions.length > 0 && filters.categories.length === categoryOptions.length && (

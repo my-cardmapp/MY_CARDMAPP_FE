@@ -138,14 +138,9 @@ const MerchantListItem = memo(function MerchantListItem({
             })}
           </div>
         </div>
-        
+
         {/* 오른쪽 정보 */}
         <div className="flex flex-col items-end ml-3">
-          {/* 카테고리 아이콘 */}
-          <span className="text-2xl mb-1">
-            {merchant.category?.icon || '📍'}
-          </span>
-          
           {/* 거리 */}
           {merchant.distance && (
             <span className="text-sm text-gray-500">

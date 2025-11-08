@@ -372,11 +372,13 @@ export function SearchBar({
           onKeyDown={handleKeyDown}
           autoFocus={autoFocus}
           className={`
-            w-full pl-10 pr-10 py-2 
-            border border-gray-300 rounded-lg
-            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+            w-full pl-10 pr-10 py-3
+            bg-white border border-gray-200 rounded-lg shadow-sm
+            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+            hover:border-gray-300
             transition-all duration-200
-            ${isLoading ? 'bg-gray-50' : 'bg-white'}
+            text-gray-900 placeholder-gray-400
+            ${isLoading ? 'bg-gray-50' : ''}
           `}
         />
 

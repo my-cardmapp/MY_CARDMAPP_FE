@@ -231,11 +231,11 @@ export function RoutePlanner({ onRouteCalculated, onRouteClear, showSavedRoutes 
   const isCalculateDisabled = !selectedOrigin || !selectedDestination || isCalculating;
   
   return (
-    <div 
+    <div
       data-testid="route-planner"
-      className="flex flex-col md:flex-row gap-4 p-4 bg-white rounded-lg shadow-sm"
+      className="flex flex-col gap-5"
     >
-      <div className="flex-1 space-y-4">
+      <div className="space-y-4 bg-white rounded-lg shadow-sm border border-gray-200 p-5">
         {/* Origin Input */}
         <AutocompleteDropdown
           value={originQuery}
@@ -259,43 +259,64 @@ export function RoutePlanner({ onRouteCalculated, onRouteClear, showSavedRoutes 
         />
         
         {/* Mode Selector */}
-        <fieldset role="group" aria-label="이동 수단">
-          <legend className="text-sm font-medium text-gray-700 mb-2">
+        <fieldset role="group" aria-label="이동 수단" className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <legend className="text-sm font-semibold text-gray-900 mb-3 px-1">
             이동 수단
           </legend>
-          <div className="flex gap-4">
-            <label className="flex items-center">
+          <div className="flex gap-2">
+            <label className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg cursor-pointer transition-all ${
+              mode === 'walking'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+            }`}>
               <input
                 type="radio"
                 name="mode"
                 value="walking"
                 checked={mode === 'walking'}
                 onChange={(e) => setMode(e.target.value as RouteMode)}
-                className="mr-2"
+                className="sr-only"
               />
-              <span>도보</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <span className="font-medium">도보</span>
             </label>
-            <label className="flex items-center">
+            <label className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg cursor-pointer transition-all ${
+              mode === 'transit'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+            }`}>
               <input
                 type="radio"
                 name="mode"
                 value="transit"
                 checked={mode === 'transit'}
                 onChange={(e) => setMode(e.target.value as RouteMode)}
-                className="mr-2"
+                className="sr-only"
               />
-              <span>대중교통</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+              <span className="font-medium">대중교통</span>
             </label>
-            <label className="flex items-center">
+            <label className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg cursor-pointer transition-all ${
+              mode === 'driving'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+            }`}>
               <input
                 type="radio"
                 name="mode"
                 value="driving"
                 checked={mode === 'driving'}
                 onChange={(e) => setMode(e.target.value as RouteMode)}
-                className="mr-2"
+                className="sr-only"
               />
-              <span>자동차</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+              </svg>
+              <span className="font-medium">자동차</span>
             </label>
           </div>
         </fieldset>
@@ -307,14 +328,19 @@ export function RoutePlanner({ onRouteCalculated, onRouteClear, showSavedRoutes 
             disabled={isCalculateDisabled}
             data-testid="calculate-route-button"
             className={`
-              flex-1 px-4 py-2 rounded-lg font-medium transition-colors
-              ${isCalculateDisabled 
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
-                : 'bg-blue-500 text-white hover:bg-blue-600'
+              flex-1 px-4 py-3 rounded-lg font-semibold transition-all shadow-sm
+              ${isCalculateDisabled
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow'
               }
             `}
           >
-            {isCalculating ? '계산 중...' : '경로 계산'}
+            {isCalculating ? (
+              <span className="flex items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                계산 중...
+              </span>
+            ) : '경로 계산'}
           </button>
           {routes.length > 0 && (
             <>
@@ -323,21 +349,23 @@ export function RoutePlanner({ onRouteCalculated, onRouteClear, showSavedRoutes 
                 origin={selectedOrigin!}
                 destination={selectedDestination!}
                 mode={mode}
-                className="flex-shrink-0"
+                className="flex-shrink-0 px-4 py-3 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg font-semibold transition-all shadow-sm"
               />
               <button
                 onClick={() => setShowSaveDialog(true)}
-                className="px-4 py-2 rounded-lg font-medium bg-green-500 text-white hover:bg-green-600 transition-colors"
+                className="px-4 py-3 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 transition-all shadow-sm"
                 title="경로 저장"
               >
-                💾 저장
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                </svg>
               </button>
             </>
           )}
           {(routes.length > 0 || error) && (
             <button
               onClick={handleClear}
-              className="px-4 py-2 rounded-lg font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
+              className="px-4 py-3 rounded-lg font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
             >
               초기화
             </button>
@@ -353,12 +381,12 @@ export function RoutePlanner({ onRouteCalculated, onRouteClear, showSavedRoutes 
                 value={routeName}
                 onChange={(e) => setRouteName(e.target.value)}
                 placeholder="경로 이름 (선택사항)"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 px-3 py-2.5 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 autoFocus
               />
               <button
                 onClick={handleSaveRoute}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors shadow-sm"
               >
                 저장
               </button>
@@ -367,7 +395,7 @@ export function RoutePlanner({ onRouteCalculated, onRouteClear, showSavedRoutes 
                   setShowSaveDialog(false);
                   setRouteName('');
                 }}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                className="px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold transition-colors shadow-sm"
               >
                 취소
               </button>
@@ -380,50 +408,89 @@ export function RoutePlanner({ onRouteCalculated, onRouteClear, showSavedRoutes 
         
         {/* Error Display */}
         {error && (
-          <div role="alert" className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
-            {error}
+          <div role="alert" className="flex gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex-shrink-0 w-5 h-5 text-red-600">
+              <svg fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-red-800">{error}</p>
+            </div>
           </div>
         )}
       </div>
-      
+
       {/* Results Display */}
       {routes.length > 0 && (
-        <div className="flex-1 space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">경로 결과</h3>
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 px-5">
+            <div className="w-8 h-8 bg-green-50 rounded-full flex items-center justify-center">
+              <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">경로 결과</h3>
+          </div>
           {routes.map((route, index) => (
             <div
               key={index}
-              className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
+              className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow"
             >
               {route.summary && (
-                <h4 className="font-medium text-gray-900 mb-2">{route.summary}</h4>
+                <h4 className="font-semibold text-gray-900 mb-3">{route.summary}</h4>
               )}
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <span className="text-gray-600">거리: </span>
-                  <span className="font-medium">{formatDistance(route.distance)}</span>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex gap-2 items-center">
+                  <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500">거리</div>
+                    <div className="font-semibold text-gray-900">{formatDistance(route.distance)}</div>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-gray-600">시간: </span>
-                  <span className="font-medium">{formatDuration(route.duration)}</span>
+                <div className="flex gap-2 items-center">
+                  <div className="w-8 h-8 bg-purple-50 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500">시간</div>
+                    <div className="font-semibold text-gray-900">{formatDuration(route.duration)}</div>
+                  </div>
                 </div>
                 {route.fare !== undefined && (
-                  <div className="col-span-2">
-                    <span className="text-gray-600">요금: </span>
-                    <span className="font-medium">{formatCurrency(route.fare)}</span>
+                  <div className="col-span-2 flex gap-2 items-center">
+                    <div className="w-8 h-8 bg-green-50 rounded-full flex items-center justify-center flex-shrink-0">
+                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500">요금</div>
+                      <div className="font-semibold text-gray-900">{formatCurrency(route.fare)}</div>
+                    </div>
                   </div>
                 )}
               </div>
               {route.steps && route.steps.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-gray-100">
+                <div className="mt-4 pt-4 border-t border-gray-200">
                   <details className="cursor-pointer">
-                    <summary className="text-sm text-gray-600 hover:text-gray-800">
+                    <summary className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
                       상세 경로 보기
                     </summary>
-                    <ol className="mt-2 space-y-1">
+                    <ol className="mt-3 space-y-2">
                       {route.steps.map((step, stepIndex) => (
-                        <li key={stepIndex} className="text-sm text-gray-700 pl-4">
-                          {stepIndex + 1}. {step.instruction}
+                        <li key={stepIndex} className="text-sm text-gray-700 pl-6 flex gap-2">
+                          <span className="font-semibold text-blue-600 flex-shrink-0">{stepIndex + 1}.</span>
+                          <span>{step.instruction}</span>
                         </li>
                       ))}
                     </ol>
