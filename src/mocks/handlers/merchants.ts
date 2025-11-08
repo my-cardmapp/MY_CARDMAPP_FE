@@ -1,15 +1,16 @@
 import { http, HttpResponse, delay } from 'msw';
 import { generateMerchants } from '../generators/merchants';
-import { 
-  applyNetworkConditions, 
+import { sampleMerchants } from '@/data/sampleMerchants';
+import {
+  applyNetworkConditions,
   createNetworkDelay,
   isErrorTrigger,
   getErrorResponse,
-  NetworkErrorType 
+  NetworkErrorType
 } from '../utils/network';
-import type { 
-  Merchant, 
-  MerchantListResponse, 
+import type {
+  Merchant,
+  MerchantListResponse,
   MerchantDetailResponse,
   NearbyMerchantsResponse,
   MerchantSearchResponse,
@@ -18,11 +19,13 @@ import type {
 } from '@/types/api';
 
 // 한국 가맹점 데이터 생성 (캐싱)
+// Use sampleMerchants instead of randomly generated data for consistency
 let cachedMerchants: Merchant[] | null = null;
 
 function getMerchants(): Merchant[] {
   if (!cachedMerchants) {
-    cachedMerchants = generateMerchants(100);
+    // Use sampleMerchants as the base data source
+    cachedMerchants = sampleMerchants as any[];
   }
   return cachedMerchants;
 }

@@ -10,6 +10,7 @@ import { RoutePlanner } from '@/components/route/RoutePlanner'
 import { RouteLayer } from '@/components/map/RouteLayer'
 import MerchantDetailPanel from '@/components/merchant/MerchantDetailPanel'
 import { sampleMerchants as MOCK_MERCHANTS } from '@/data/sampleMerchants'
+import { useSearchStore } from '@/stores/searchStore'
 import type { Merchant } from '@/types/merchant'
 import type { MapBounds } from '@/hooks/useMapBounds'
 import type { Route, Location } from '@/types'
@@ -21,6 +22,11 @@ const ALL_CARD_TYPES = ['CHILD_MEAL', 'CULTURE_NURI', 'LOCAL_CURRENCY'] as const
 export default function MapPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+
+  // Get search state from store
+  const searchQuery = useSearchStore(state => state.query)
+  const searchMerchants = useSearchStore(state => state.merchants)
+
   const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null)
   const [activeCardTypes, setActiveCardTypes] = useState<string[]>([])
   const [currentBounds, setCurrentBounds] = useState<MapBounds | null>(null)
@@ -28,7 +34,7 @@ export default function MapPage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [showRoutePlanner, setShowRoutePlanner] = useState(false)
-  
+
   // Route visualization state
   const [currentRoute, setCurrentRoute] = useState<Route | null>(null)
   const [routeOrigin, setRouteOrigin] = useState<Location | null>(null)
@@ -149,9 +155,12 @@ export default function MapPage() {
   }, [])
 
   // 필터링된 가맹점 목록
-  const filteredMerchants = activeCardTypes.length === 0 
-    ? MOCK_MERCHANTS 
-    : MOCK_MERCHANTS.filter(merchant =>
+  // Use search results if there's a search query, otherwise use mock data
+  const baseMerchants = searchQuery ? searchMerchants : MOCK_MERCHANTS
+
+  const filteredMerchants = activeCardTypes.length === 0
+    ? baseMerchants
+    : baseMerchants.filter(merchant =>
         merchant.cards.some(card => activeCardTypes.includes(card.code))
       )
 
