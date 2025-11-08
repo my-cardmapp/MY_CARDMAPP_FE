@@ -47,6 +47,9 @@ export interface Review {
   images?: string[];
 }
 
+// Google Places API Review 타입 (import)
+import type { Review as GoogleReview, Photo } from './googlePlaces'
+
 // 가맹점 관련 타입
 export interface Merchant {
   id: number;
@@ -58,6 +61,15 @@ export interface Merchant {
   businessHours?: BusinessHours;
   phone?: string;
   isVerified: boolean;
+  // Google Places API 추가 필드
+  rating?: number; // 평점 (0.0 ~ 5.0)
+  userRatingCount?: number; // 리뷰 수
+  reviews?: GoogleReview[]; // Google 리뷰 목록
+  photos?: Photo[]; // 사진 목록
+  googlePlaceId?: string; // Google Place ID
+  websiteUri?: string; // 웹사이트 URI
+  googleMapsUri?: string; // Google Maps URI
+  priceLevel?: string; // 가격 수준
 }
 
 export interface MerchantWithDistance extends Merchant {
