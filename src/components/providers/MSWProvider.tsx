@@ -5,9 +5,13 @@ import { useEffect, useState } from 'react';
 export function MSWProvider({ children }: { children: React.ReactNode }) {
   const [mswReady, setMswReady] = useState(false);
 
+  // 환경변수로 MSW 사용 여부 결정
+  const useMSW = process.env.NEXT_PUBLIC_USE_MSW === 'true';
+
   useEffect(() => {
     const initMSW = async () => {
-      if (process.env.NODE_ENV === 'development') {
+      // MSW 사용 설정이 켜져 있을 때만 초기화
+      if (useMSW && process.env.NODE_ENV === 'development') {
         try {
           const { initMocks } = await import('@/mocks');
           await initMocks();
@@ -15,15 +19,17 @@ export function MSWProvider({ children }: { children: React.ReactNode }) {
         } catch (error) {
           console.error('[MSWProvider] Failed to initialize MSW:', error);
         }
+      } else {
+        console.log('[MSWProvider] MSW disabled, using real API');
       }
       setMswReady(true);
     };
 
     initMSW();
-  }, []);
+  }, [useMSW]);
 
-  // 개발 환경에서 MSW가 준비될 때까지 대기
-  if (process.env.NODE_ENV === 'development' && !mswReady) {
+  // MSW를 사용할 때만 준비될 때까지 대기
+  if (useMSW && process.env.NODE_ENV === 'development' && !mswReady) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">

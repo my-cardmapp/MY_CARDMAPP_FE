@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { MapProvider, useMapContext } from '@/contexts/MapContext'
 import MapContainer from '@/components/map/MapContainer'
@@ -19,7 +19,7 @@ import type { Route, Location } from '@/types'
 const ALL_CARD_TYPES = ['CHILD_MEAL', 'CULTURE_NURI', 'LOCAL_CURRENCY'] as const
 
 
-export default function MapPage() {
+function MapPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -377,5 +377,20 @@ export default function MapPage() {
         </main>
       </div>
     </MapProvider>
+  )
+}
+
+export default function MapPage() {
+  return (
+    <Suspense fallback={
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">지도를 불러오는 중...</p>
+        </div>
+      </div>
+    }>
+      <MapPageContent />
+    </Suspense>
   )
 }
