@@ -9,8 +9,8 @@ import { SearchBar } from '@/components/search/SearchBar'
 import { RoutePlanner } from '@/components/route/RoutePlanner'
 import { RouteLayer } from '@/components/map/RouteLayer'
 import MerchantDetailPanel from '@/components/merchant/MerchantDetailPanel'
-import { sampleMerchants as MOCK_MERCHANTS } from '@/data/sampleMerchants'
 import { useSearchStore } from '@/stores/searchStore'
+import { useMerchantStore } from '@/stores/merchantStore'
 import type { Merchant } from '@/types/merchant'
 import type { MapBounds } from '@/hooks/useMapBounds'
 import type { Route, Location } from '@/types'
@@ -27,12 +27,19 @@ function MapPageContent() {
   const searchQuery = useSearchStore(state => state.query)
   const searchMerchants = useSearchStore(state => state.merchants)
 
+  // Get merchant store state
+  const merchants = useMerchantStore(state => state.merchants)
+  const isLoading = useMerchantStore(state => state.isLoading)
+  const error = useMerchantStore(state => state.error)
+  const hasMoreFromStore = useMerchantStore(state => state.hasMore)
+  const fetchMerchants = useMerchantStore(state => state.fetchMerchants)
+  const incrementPage = useMerchantStore(state => state.incrementPage)
+
   const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null)
   const [activeCardTypes, setActiveCardTypes] = useState<string[]>([])
   const [currentBounds, setCurrentBounds] = useState<MapBounds | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [hasMore, setHasMore] = useState(true)
   const [showRoutePlanner, setShowRoutePlanner] = useState(false)
 
   // Route visualization state
@@ -43,11 +50,16 @@ function MapPageContent() {
 
   console.log('MapPage - activeCardTypes state:', activeCardTypes)
 
+  // Fetch merchants on initial load
+  useEffect(() => {
+    fetchMerchants({ page: 1 })
+  }, [fetchMerchants])
+
   // Initialize filters from URL on page load
   useEffect(() => {
     const cardTypesParam = searchParams.get('cardTypes')
     if (cardTypesParam) {
-      const cardTypesFromUrl = cardTypesParam.split(',').filter(type => 
+      const cardTypesFromUrl = cardTypesParam.split(',').filter(type =>
         ALL_CARD_TYPES.includes(type as any)
       )
       if (cardTypesFromUrl.length > 0) {
@@ -81,16 +93,16 @@ function MapPageContent() {
   }
 
   const handleLoadMore = async () => {
-    if (isLoadingMore || !hasMore) return
+    if (isLoadingMore || !hasMoreFromStore) return
 
     setIsLoadingMore(true)
-    // 실제로는 API 호출로 추가 데이터 로드
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setIsLoadingMore(false)
-    
-    // 데모용: 500개 이상이면 더 이상 로드하지 않음
-    if (MOCK_MERCHANTS.length >= 500) {
-      setHasMore(false)
+    try {
+      incrementPage()
+      await fetchMerchants()
+    } catch (error) {
+      console.error('Failed to load more merchants:', error)
+    } finally {
+      setIsLoadingMore(false)
     }
   }
 
@@ -155,8 +167,8 @@ function MapPageContent() {
   }, [])
 
   // 필터링된 가맹점 목록
-  // Use search results if there's a search query, otherwise use mock data
-  const baseMerchants = searchQuery ? searchMerchants : MOCK_MERCHANTS
+  // Use search results if there's a search query, otherwise use merchants from store
+  const baseMerchants = searchQuery ? searchMerchants : merchants
 
   const filteredMerchants = activeCardTypes.length === 0
     ? baseMerchants
@@ -326,16 +338,34 @@ function MapPageContent() {
                         </p>
                       )}
                     </div>
-                    
+
+                    {/* 에러 메시지 */}
+                    {error && (
+                      <div className="px-4 py-3 bg-red-50 border-b border-red-100">
+                        <div className="flex items-center gap-2 text-red-800">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-sm font-medium">데이터를 불러오는 중 오류가 발생했습니다</span>
+                        </div>
+                        <button
+                          onClick={() => fetchMerchants({ page: 1 })}
+                          className="mt-2 text-sm text-red-700 underline hover:text-red-900"
+                        >
+                          다시 시도
+                        </button>
+                      </div>
+                    )}
+
                     {/* 가맹점 목록 */}
                     <div className="flex-1 overflow-hidden">
                       <MerchantList
                         merchants={filteredMerchants}
                         onItemClick={handleMarkerClick}
                         onLoadMore={handleLoadMore}
-                        isLoading={false}
+                        isLoading={isLoading}
                         isLoadingMore={isLoadingMore}
-                        hasMore={hasMore}
+                        hasMore={hasMoreFromStore}
                         selectedMerchantId={selectedMerchant?.id}
                         filterKey={activeCardTypes.join(',')}
                       />
