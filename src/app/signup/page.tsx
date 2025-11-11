@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, FormEvent, useEffect, useRef } from 'react'
+import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useAuthStore } from '@/stores/authStore'
-import NaverMapScript from '@/components/map/NaverMapScript'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -20,31 +20,6 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false)
-
-  const mapRef = useRef<HTMLDivElement>(null)
-  const [isMapReady, setIsMapReady] = useState(false)
-
-  useEffect(() => {
-    if (!mapRef.current || !window.naver || isMapReady) return
-
-    const map = new window.naver.maps.Map(mapRef.current, {
-      center: new window.naver.maps.LatLng(37.5665, 126.9780), // 서울 중심
-      zoom: 11,
-      draggable: false,
-      pinchZoom: false,
-      scrollWheel: false,
-      keyboardShortcuts: false,
-      disableDoubleTapZoom: true,
-      disableDoubleClickZoom: true,
-      disableKineticPan: true,
-      logoControl: false,
-      mapDataControl: false,
-      scaleControl: false,
-      zoomControl: false
-    })
-
-    setIsMapReady(true)
-  }, [isMapReady])
 
   // Password strength indicator
   const getPasswordStrength = (pwd: string): { strength: number; label: string; color: string } => {
@@ -102,21 +77,24 @@ export default function SignupPage() {
   }
 
   return (
-    <>
-      <NaverMapScript />
-      <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-        {/* 실제 Naver Map 배경 */}
-        <div
-          ref={mapRef}
-          className="absolute inset-0"
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      {/* 지도 이미지 배경 */}
+      <div className="absolute inset-0">
+        <Image
+          src="/images/map-background.png"
+          alt="Map background"
+          fill
+          priority
+          className="object-cover"
           style={{
             filter: 'blur(8px)',
             transform: 'scale(1.1)'
           }}
         />
+      </div>
 
-        {/* 어두운 오버레이 */}
-        <div className="absolute inset-0 bg-black/40" />
+      {/* 어두운 오버레이 */}
+      <div className="absolute inset-0 bg-black/40" />
 
         <div className="w-full max-w-md relative z-10">
           {/* 로고 및 타이틀 */}
@@ -329,12 +307,11 @@ export default function SignupPage() {
             </div>
           </div>
 
-          {/* 푸터 */}
-          <p className="text-center text-sm text-white/80 drop-shadow mt-6">
-            Card-Map은 복지카드 사용자를 위한 서비스입니다
-          </p>
-        </div>
+        {/* 푸터 */}
+        <p className="text-center text-sm text-white/80 drop-shadow mt-6">
+          Card-Map은 복지카드 사용자를 위한 서비스입니다
+        </p>
       </div>
-    </>
+    </div>
   )
 }
