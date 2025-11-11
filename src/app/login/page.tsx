@@ -3,7 +3,6 @@
 import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useAuthStore } from '@/stores/authStore'
 
 export default function LoginPage() {
@@ -32,40 +31,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      {/* 지도 이미지 배경 */}
-      <div className="absolute inset-0">
-        <Image
-          src="/images/map-background.png"
-          alt="Map background"
-          fill
-          priority
-          className="object-cover"
-          style={{
-            filter: 'blur(8px)',
-            transform: 'scale(1.1)' // 블러로 인한 가장자리 처리
-          }}
-        />
-      </div>
-
-      {/* 어두운 오버레이 */}
-      <div className="absolute inset-0 bg-black/40" />
-
-        <div className="w-full max-w-md relative z-10">
-          {/* 로고 및 타이틀 */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-lg">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </div>
-            <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">Card-Map</h1>
-            <p className="text-white/90 drop-shadow">복지카드 가맹점 찾기</p>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+      <div className="w-full max-w-md">
+        {/* 로고 및 타이틀 */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-lg">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
           </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Card-Map</h1>
+          <p className="text-gray-600">복지카드 가맹점 찾기</p>
+        </div>
 
-          {/* 로그인 폼 */}
-          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl p-8">
+        {/* 로그인 폼 */}
+        <div className="bg-white rounded-2xl shadow-xl p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">로그인</h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -185,7 +166,7 @@ export default function LoginPage() {
         </div>
 
         {/* 푸터 */}
-        <p className="text-center text-sm text-white/80 drop-shadow mt-6">
+        <p className="text-center text-sm text-gray-600 mt-6">
           Card-Map은 복지카드 사용자를 위한 서비스입니다
         </p>
       </div>
