@@ -213,6 +213,28 @@ export const routeAPI = {
 
 // Auth API
 export const authAPI = {
+  async signup(params: {
+    email: string
+    password: string
+    name: string
+    phone?: string
+  }) {
+    return fetchAPI<{
+      accessToken: string
+      refreshToken: string
+      expiresIn: number
+      user: {
+        id: number
+        email: string
+        name: string
+        role: string
+      }
+    }>('/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify(params)
+    })
+  },
+
   async login(email: string, password: string) {
     return fetchAPI<{
       accessToken: string

@@ -19,6 +19,7 @@ interface AuthState {
   error: string | null
 
   // Actions
+  signup: (params: { email: string; password: string; name: string; phone?: string }) => Promise<void>
   login: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
   refreshAccessToken: () => Promise<void>
@@ -64,6 +65,36 @@ export const useAuthStore = create<AuthState>()(
               localStorage.removeItem('refreshToken')
               localStorage.removeItem('user')
             }
+          }
+        },
+
+        // Signup
+        signup: async (params: { email: string; password: string; name: string; phone?: string }) => {
+          set({ isLoading: true, error: null })
+
+          try {
+            const response = await authAPI.signup(params)
+
+            // Save to localStorage
+            localStorage.setItem('accessToken', response.accessToken)
+            localStorage.setItem('refreshToken', response.refreshToken)
+            localStorage.setItem('user', JSON.stringify(response.user))
+
+            // Update state
+            set({
+              user: response.user,
+              accessToken: response.accessToken,
+              refreshToken: response.refreshToken,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null
+            })
+          } catch (error) {
+            set({
+              error: error instanceof Error ? error.message : '회원가입에 실패했습니다.',
+              isLoading: false
+            })
+            throw error
           }
         },
 
