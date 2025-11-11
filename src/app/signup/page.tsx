@@ -76,7 +76,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="py-8 px-4 bg-gray-50 min-h-screen">
+    <div className="py-8 px-4 bg-gray-50">
       <div className="max-w-md mx-auto w-full">
         {/* 로고 및 타이틀 */}
         <div className="text-center mb-8">
