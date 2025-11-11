@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuthStore } from '@/stores/authStore'
+import NaverMapScript from '@/components/map/NaverMapScript'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -14,6 +15,31 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
+
+  const mapRef = useRef<HTMLDivElement>(null)
+  const [isMapReady, setIsMapReady] = useState(false)
+
+  useEffect(() => {
+    if (!mapRef.current || !window.naver || isMapReady) return
+
+    const map = new window.naver.maps.Map(mapRef.current, {
+      center: new window.naver.maps.LatLng(37.5665, 126.9780), // 서울 중심
+      zoom: 11,
+      draggable: false,
+      pinchZoom: false,
+      scrollWheel: false,
+      keyboardShortcuts: false,
+      disableDoubleTapZoom: true,
+      disableDoubleClickZoom: true,
+      disableKineticPan: true,
+      logoControl: false,
+      mapDataControl: false,
+      scaleControl: false,
+      zoomControl: false
+    })
+
+    setIsMapReady(true)
+  }, [isMapReady])
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -31,35 +57,37 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* 지도 패턴 배경 */}
-      <div className="absolute inset-0 opacity-5">
-        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="map-pattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
-              <path d="M 0 50 L 50 0 L 100 50 L 50 100 Z" fill="none" stroke="#10b981" strokeWidth="1"/>
-              <circle cx="50" cy="50" r="3" fill="#10b981"/>
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#map-pattern)" />
-        </svg>
-      </div>
+    <>
+      <NaverMapScript />
+      <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+        {/* 실제 Naver Map 배경 */}
+        <div
+          ref={mapRef}
+          className="absolute inset-0"
+          style={{
+            filter: 'blur(8px)',
+            transform: 'scale(1.1)' // 블러로 인한 가장자리 처리
+          }}
+        />
 
-      <div className="w-full max-w-md relative z-10">
-        {/* 로고 및 타이틀 */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-lg">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
+        {/* 어두운 오버레이 */}
+        <div className="absolute inset-0 bg-black/40" />
+
+        <div className="w-full max-w-md relative z-10">
+          {/* 로고 및 타이틀 */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-lg">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">Card-Map</h1>
+            <p className="text-white/90 drop-shadow">복지카드 가맹점 찾기</p>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Card-Map</h1>
-          <p className="text-gray-600">복지카드 가맹점 찾기</p>
-        </div>
 
-        {/* 로그인 폼 */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+          {/* 로그인 폼 */}
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">로그인</h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -178,11 +206,12 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* 푸터 */}
-        <p className="text-center text-sm text-gray-600 mt-6">
-          Card-Map은 복지카드 사용자를 위한 서비스입니다
-        </p>
+          {/* 푸터 */}
+          <p className="text-center text-sm text-white/80 drop-shadow mt-6">
+            Card-Map은 복지카드 사용자를 위한 서비스입니다
+          </p>
+        </div>
       </div>
-    </div>
+    </>
   )
 }
