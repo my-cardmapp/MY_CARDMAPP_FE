@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Image from 'next/image'
 import { MapProvider, useMapContext } from '@/contexts/MapContext'
 import MapContainer from '@/components/map/MapContainer'
 import MerchantList from '@/components/merchant/MerchantList'
@@ -178,21 +179,20 @@ function MapPageContent() {
 
   return (
     <MapProvider>
-      <div className="h-screen flex flex-col">
+      <div className="h-screen flex flex-col overflow-hidden">
         <header className="bg-white border-b border-gray-200 z-10 relative">
           <div className="px-6 py-4">
             <div className="flex items-center justify-between gap-4">
               {/* 로고 및 사이드바 토글 */}
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900">Card-Map</h1>
-                </div>
+                <Image
+                  src="/logo.png"
+                  alt="Card-Map"
+                  width={123}
+                  height={50}
+                  className="object-contain flex-shrink-0"
+                  priority
+                />
                 <button
                   onClick={toggleSidebar}
                   className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"

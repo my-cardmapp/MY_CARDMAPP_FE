@@ -1,42 +1,49 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Card-Map</h1>
-              <p className="text-sm text-gray-600">복지카드 가맹점 찾기</p>
-            </div>
-          </div>
+        <div className="w-full px-6 sm:px-8 lg:px-12 py-4">
+          <Image
+            src="/logo.png"
+            alt="Card-Map"
+            width={145}
+            height={59}
+            className="object-contain"
+            priority
+          />
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Hero Section */}
-        <div className="bg-white rounded-lg shadow-sm p-8 mb-8">
-          <div className="max-w-3xl mx-auto text-center">
+      <main className="w-full px-6 sm:px-8 lg:px-12 py-12">
+        {/* Hero Section with Banner */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-8">
+          <div className="relative w-full h-72 sm:h-84 md:h-96" style={{ backgroundColor: '#F6F8F8' }}>
+            <Image
+              src="/banner.png"
+              alt="MY CARDMAPP 배너"
+              fill
+              className="object-contain"
+              quality={100}
+              priority
+            />
+          </div>
+          <div className="text-center p-8 md:p-10">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               복지카드 가맹점을 쉽게 찾아보세요
             </h2>
-            <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-              아동급식카드, 문화누리카드, 지역사랑상품권을 사용할 수 있는 가맹점을<br />
+            <p className="text-lg md:text-xl text-gray-600 mb-6 leading-relaxed max-w-3xl mx-auto">
+              아동급식카드, 문화누리카드, 지역사랑상품권을 사용할 수 있는 가맹점을
               지도에서 한눈에 확인하고 경로를 계획하세요
             </p>
 
             <Link
               href="/map"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold text-base md:text-lg rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
@@ -47,7 +54,7 @@ export default function Home() {
         </div>
 
         {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           {/* 아동급식카드 */}
           <div className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
             <div className="flex gap-4">
@@ -101,9 +108,9 @@ export default function Home() {
         </div>
 
         {/* Key Features */}
-        <div className="bg-white rounded-lg shadow-sm p-8">
-          <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">주요 기능</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white rounded-lg shadow-sm p-10">
+          <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">주요 기능</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="flex gap-3">
               <div className="flex-shrink-0 w-11 h-11 bg-blue-50 rounded-full flex items-center justify-center">
                 <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -157,7 +164,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="w-full px-6 sm:px-8 lg:px-12 py-8">
           <p className="text-center text-sm text-gray-500">
             Card-Map - 복지카드 가맹점 찾기 서비스
           </p>
