@@ -52,7 +52,7 @@ function MapPageContent() {
 
   // Fetch merchants on initial load
   useEffect(() => {
-    fetchMerchants({ page: 1 })
+    fetchMerchants({ page: 0 })
   }, [fetchMerchants])
 
   // Initialize filters from URL on page load
