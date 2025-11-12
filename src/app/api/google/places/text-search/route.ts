@@ -4,6 +4,7 @@ import type {
   GooglePlacesTextSearchResponse,
   GooglePlacesErrorResponse,
 } from '@/types/googlePlaces'
+import { isOriginAllowed, createForbiddenResponse } from '@/lib/api-security'
 
 /**
  * Google Places API (New) - Text Search
@@ -21,6 +22,11 @@ const API_KEY = process.env.GOOGLE_PLACES_API_KEY
  */
 export async function POST(request: NextRequest) {
   try {
+    // Origin 검증
+    if (!isOriginAllowed(request)) {
+      return createForbiddenResponse()
+    }
+
     // API 키 검증
     if (!API_KEY) {
       console.error('❌ Google Places API Key is not configured')

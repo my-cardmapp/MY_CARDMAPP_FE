@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isOriginAllowed, createForbiddenResponse } from '@/lib/api-security'
 
 /**
  * Google Places API (New) - Photo
@@ -15,6 +16,11 @@ const API_KEY = process.env.GOOGLE_PLACES_API_KEY
  */
 export async function GET(request: NextRequest) {
   try {
+    // Origin 검증
+    if (!isOriginAllowed(request)) {
+      return createForbiddenResponse()
+    }
+
     // API 키 검증
     if (!API_KEY) {
       console.error('❌ Google Places API Key is not configured')
