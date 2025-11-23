@@ -539,6 +539,7 @@ const ScatteredWord = ({ word, index, total, scrollY }: { word: string, index: n
 
     return (
         <motion.span
+            suppressHydrationWarning
             style={{ x, y, opacity, position: 'absolute' }}
             className="text-xl md:text-3xl font-medium text-gray-400 whitespace-nowrap"
         >
